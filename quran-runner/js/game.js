@@ -10,7 +10,7 @@
   var cv = $('game'), c = cv.getContext('2d');
   if (!c.roundRect) c.roundRect = function (x, y, w, h) { this.rect(x, y, w, h); }; // older browsers
   var V = { w: 0, h: 0, dpr: 1, cx: 0, hy: 0, gy: 0, lane: 0, unit: 0 };
-  var K = 0.085, ZFAR = 118, SPAWN_Z = 112, ZNEAR = -2.9, FLY_Y = 2.5;
+  var K = 0.085, ZFAR = 118, SPAWN_Z = 112, ZNEAR = -2.9, FLY_Y = 2.05;
   var qs = new URLSearchParams(location.search);
   var SECS = Math.max(5, +qs.get('secs') || D.sceneSeconds);
   var N = D.scenes.length;
