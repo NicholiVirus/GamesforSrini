@@ -810,7 +810,7 @@
   Art.player = function (c, x, y, u, st) {
     var t = st.t, ph = st.phase, sl = st.slide, air = st.air;
     var robe = st.robe, robe2 = shade(robe, -0.14), skin = '#c68e62';
-    var swing = air ? 0.5 : Math.sin(ph) * 1;
+    var swing = air ? 0.5 : st.skates ? Math.sin(ph * 0.35) * 0.45 : Math.sin(ph) * 1; // skaters glide in long strides
     c.save();
     if (st.blink) c.globalAlpha = 0.45;
     // shadow on the ground
@@ -829,6 +829,7 @@
     var legCol = st.outfit === 'ihram' ? skin : st.outfit === 'cricket' ? '#f4f4f4' : shade(robe, -0.28);
     rect(c, x - 0.2 * u, y - 0.55 * u - Math.max(0, l1), 0.16 * u, 0.55 * u + Math.max(0, l1) * 0.2, legCol); rect(c, x + 0.04 * u, y - 0.55 * u - Math.max(0, l2), 0.16 * u, 0.55 * u + Math.max(0, l2) * 0.2, legCol);
     rect(c, x - 0.23 * u, y - 0.08 * u - Math.max(0, l1), 0.22 * u, 0.09 * u, '#5a3d22'); rect(c, x + 0.01 * u, y - 0.08 * u - Math.max(0, l2), 0.22 * u, 0.09 * u, '#5a3d22');
+    if (st.skates) [[-0.12, l1], [0.12, l2]].forEach(function (f) { var fx = x + f[0] * u, fy = y - Math.max(0, f[1]); rect(c, fx - 0.13 * u, fy - 0.02 * u, 0.26 * u, 0.06 * u, '#e74c3c'); circ(c, fx - 0.08 * u, fy + 0.05 * u, 0.04 * u, '#1e1e22'); circ(c, fx + 0.08 * u, fy + 0.05 * u, 0.04 * u, '#1e1e22'); });
     // robe / body
     var top = y - 1.38 * u;
     if (st.outfit === 'ihram') { robe = '#ffffff'; robe2 = '#e9e9e9'; }
@@ -904,6 +905,20 @@
       var py = y - 0.84 * u; ell(c, x, py, 0.6 * u, 0.1 * u, '#ecf0f1'); ell(c, x, py + 0.03 * u, 0.5 * u, 0.06 * u, '#cfd6d8'); // a plate of samosas
       for (var i = -2; i <= 2; i++) Art.coin(c, 'samosa', x + i * 0.2 * u, py - 0.14 * u - (i % 2 ? 0.05 : 0) * u, 0.13 * u, 0);
       var bite = Math.abs(Math.sin(t * 2.5)); Art.coin(c, 'samosa', x + 0.36 * u, y - (1.1 + bite * 0.25) * u, 0.11 * u, 0); // one on its way up
+    },
+    skater: function (c, x, y, u, t) { // the roller-skating waiter, tray held high
+      var sway = Math.sin(t * 5) * 0.05 * u, lift = 0.13 * u;
+      for (var s = -1; s <= 1; s += 2) { var fx = x + s * 0.11 * u + sway * 0.4; rect(c, fx - 0.15 * u, y - 0.1 * u, 0.3 * u, 0.07 * u, '#e74c3c'); circ(c, fx - 0.09 * u, y - 0.03 * u, 0.035 * u, '#1e1e22'); circ(c, fx + 0.09 * u, y - 0.03 * u, 0.035 * u, '#1e1e22'); }
+      c.save(); c.translate(sway, -lift);
+      var h = person(c, x, y, u, { shirt: '#c0392b', pants: '#1f2a36', la: 0.28 + Math.sin(t * 5) * 0.06, ra: 0.94 });
+      rect(c, x - 0.2 * u, y - 1.12 * u, 0.4 * u, 0.06 * u, '#f4f4f4'); // restaurant shirt stripe
+      var tx = h.rx + 0.02 * u, ty = h.ry - 0.06 * u, tilt = Math.sin(t * 2.3) * 0.08;
+      c.save(); c.translate(tx, ty); c.rotate(tilt);
+      ell(c, 0, 0, 0.42 * u, 0.07 * u, '#bdc3c7'); ell(c, -0.14 * u, -0.06 * u, 0.15 * u, 0.04 * u, '#ffffff'); circ(c, -0.14 * u, -0.1 * u, 0.07 * u, '#d35400');
+      rect(c, 0.08 * u, -0.26 * u, 0.1 * u, 0.2 * u, 'rgba(255,255,255,0.85)'); rect(c, 0.09 * u, -0.19 * u, 0.08 * u, 0.12 * u, '#f5b041');
+      ell(c, 0.27 * u, -0.07 * u, 0.09 * u, 0.04 * u, '#7a3a1a'); c.restore();
+      c.restore();
+      c.globalAlpha *= 0.5; for (var k = 1; k <= 3; k++) line(c, x - (0.3 + k * 0.22) * u, y - (0.05 + k * 0.08) * u, x - (0.55 + k * 0.22) * u, y - (0.05 + k * 0.08) * u, '#ffffff', 2); c.globalAlpha *= 2;
     },
     sufi: function (c, x, y, u, t) { // a singer with a great cloud of curls and an ajrak shawl
       for (var i = 0; i < 9; i++) { var a = Math.PI + (i / 8) * Math.PI; circ(c, x + Math.cos(a) * 0.27 * u, y - 1.5 * u + Math.sin(a) * 0.27 * u, 0.13 * u, '#1e1611'); }

@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   var QR = (window.QR = window.QR || {});
-  var ctx = null, master = null, mode = 'full', timer = null, step = 0, nextT = 0, part = 0, playing = false;
+  var ctx = null, master = null, mode = 'full', timer = null, step = 0, nextT = 0, part = 0, playing = false, boostUntil = 0;
 
   function ensure() {
     if (ctx) return true;
@@ -37,11 +37,11 @@
   ];
   function schedule() {
     if (!ctx || !playing) return;
-    var spb = 0.21;
     while (nextT < ctx.currentTime + 0.25) {
+      var fast = nextT < boostUntil, spb = fast ? 0.13 : 0.21;
       if (mode !== 'off') {
         var ch = BEATS[part][step % 8];
-        if (ch === 'D') drum(nextT, true, 0.42); else if (ch === 't') drum(nextT, false, 0.4);
+        if (ch === 'D') drum(nextT, true, 0.42); else if (ch === 't' || (fast && ch === '.')) drum(nextT, false, 0.4);
         if (mode === 'full' && step % 2 === 0) {
           var f = TUNES[part][(step / 2) % 16];
           if (f) tone(f, nextT, 0.36, 'triangle', 0.055);
@@ -56,6 +56,7 @@
     setMode: function (m) { mode = m; },
     getMode: function () { return mode; },
     setPart: function (p) { part = p ? 1 : 0; },
+    boost: function (secs) { if (ctx) boostUntil = ctx.currentTime + secs; },
     music: function (on) {
       if (!ensure()) return;
       if (on && !playing) { playing = true; step = 0; nextT = ctx.currentTime + 0.05; timer = setInterval(schedule, 80); }

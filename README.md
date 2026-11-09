@@ -56,7 +56,7 @@ Then open `http://localhost:8000/quran-runner/`.
 | 16 | Multan, City of Saints | 1320–1324 | Arshad Nadeem |
 | 17 | Lahore Fort & Shalimar | 1631 · 1641 | Ali Sethi & Shae Gill |
 | 18 | Badshahi Mosque | 1673 | none (a place of prayer) |
-| 19 | Lahore Food Street | tonight | **Mr Greedy** |
+| 19 | Lahore Food Street | tonight | **Mr Greedy**, then **Ibra Raza** |
 | 20 | Minar-e-Pakistan | 23 March 1940 | Momin Saqib |
 | 21 | Gaddafi Stadium | 25 March 1992 | Sarim Akhtar |
 | 22 | Sialkot | 9 November 1877 | Mubashir Saddique |
@@ -69,11 +69,13 @@ Then open `http://localhost:8000/quran-runner/`.
 | 29 | The Karakoram Highway & Hunza | 1979 | Zenith Irfan |
 | 30 | K2, the Roof of the World | 31 July 1954 | Samina Baig |
 
-Three guests change how the game plays:
+Four guests change how the game plays:
 
 - **The Tyre Launchers** launch you into the sky on a spinning tyre. In Part 2 the
   flying power-up is a tyre launch instead of a flying carpet.
 - **Mr Greedy** starts a samosa feast: the whole road fills with samosas.
+- **Ibra Raza**, the roller-skating waiter, skates alongside you and hands you
+  roller skates: a fast, unstoppable glide over a trail of coins, and the beat speeds up.
 - **The Arm Wrestlers** start a tap-as-fast-as-you-can arm-wrestling duel.
 
 ### Content rules

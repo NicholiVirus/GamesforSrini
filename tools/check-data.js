@@ -56,13 +56,15 @@ D.scenes.forEach((s, i) => {
   if (s.part === 0) { if (s.item.kind !== 'scroll') err(`${w}: Part 1 scenes hide a scroll`); scrollNs.add(s.item.n); if (s.cameo) err(`${w}: no cameos in Part 1`); }
   else { if (s.item.kind !== 'stamp') err(`${w}: Part 2 scenes hide a stamp`); stamps++; }
 
-  if (s.cameo) {
+  if (s.cameo2 && !s.cameo) err(`${w}: has a second guest but no first guest`);
+  [s.cameo, s.cameo2].filter(Boolean).forEach((cm) => {
     cameos++;
-    need(s.cameo, ['id', 'kind', 'type', 'name', 'known', 'gift', 'giftText'], `${w} cameo`);
-    if (seenCameos.has(s.cameo.id)) err(`${w}: duplicate cameo id "${s.cameo.id}"`); seenCameos.add(s.cameo.id);
-    if (!K.cameo.includes(s.cameo.kind)) err(`${w}: unknown cameo drawing "${s.cameo.kind}"`);
-    if (!['fly', 'magnet', 'double', 'slow', 'dash', 'shield', 'coins', 'feast', 'clear', 'heart', 'arm'].includes(s.cameo.gift)) err(`${w}: unknown cameo gift "${s.cameo.gift}"`);
-  } else if (s.part === 1 && !s.quiet) err(`${w}: Part 2 scene has neither a cameo nor a quiet note`);
+    need(cm, ['id', 'kind', 'type', 'name', 'known', 'gift', 'giftText'], `${w} cameo`);
+    if (seenCameos.has(cm.id)) err(`${w}: duplicate cameo id "${cm.id}"`); seenCameos.add(cm.id);
+    if (!K.cameo.includes(cm.kind)) err(`${w}: unknown cameo drawing "${cm.kind}"`);
+    if (!['fly', 'magnet', 'double', 'slow', 'dash', 'shield', 'coins', 'feast', 'clear', 'heart', 'arm', 'skate'].includes(cm.gift)) err(`${w}: unknown cameo gift "${cm.gift}"`);
+  });
+  if (!s.cameo && s.part === 1 && !s.quiet) err(`${w}: Part 2 scene has neither a cameo nor a quiet note`);
 });
 
 if (perPart[0] !== 10 || perPart[1] !== 20) err(`expected 10 + 20 scenes, found ${perPart.join(' + ')}`);
@@ -71,9 +73,9 @@ if (D.alphabet.ar.length !== 36) err(`Arabic letter list should have 28 + 8 = 36
 D.alphabet.ur.forEach((ch) => { if (!D.letters[ch]) err(`Urdu letter "${ch}" has no entry in the letter list`); });
 D.parts.forEach((p) => p.cheers.forEach((c) => { if (c.length !== 3) err(`cheer ${JSON.stringify(c)} is incomplete`); }));
 const badge = (id) => D.badges.find((b) => b.id === id);
-['word1', 'word25', 'word120', 'wisdom10', 'stamp20', 'cameo19', 'tyre', 'arm', 'feast', 'pillars', 'summit', 'flawless'].forEach((id) => { if (!badge(id)) err(`badge "${id}" is missing`); });
+['word1', 'word25', 'word120', 'wisdom10', 'stamp20', 'guests', 'tyre', 'arm', 'feast', 'skate', 'pillars', 'summit', 'flawless'].forEach((id) => { if (!badge(id)) err(`badge "${id}" is missing`); });
 if (words !== 120) err(`badge text says 120 words but there are ${words}`);
-if (cameos !== 19) err(`badge text says 19 guests but there are ${cameos}`);
+if (cameos !== 20) err(`expected 20 cameo guests, found ${cameos}`);
 
 console.log(`scenes: ${D.scenes.length} (${perPart[0]} stories + ${perPart[1]} Pakistan)`);
 console.log(`words: ${words} (${seenWords.size} unique) · scrolls: ${scrollNs.size} · stamps: ${stamps} · cameos: ${cameos}`);

@@ -403,7 +403,8 @@
       chaser: 'Hungry cats after your samosa', coin: 'samosa',
       words: [['سموسہ', 'samosa', 'samosa'], ['چائے', 'chāe', 'tea'], ['روٹی', 'roṭī', 'bread'], ['بریانی', 'biryānī', 'biryani']],
       item: { kind: 'stamp', title: 'Food capital', text: 'A Lahori breakfast is halwa puri with chickpeas, washed down with sweet lassi. The old saying goes: “Whoever has not seen Lahore has not been born.”', ref: 'Lahore' },
-      cameo: { id: 'greedy', kind: 'greedy', type: 'internet', name: 'Mr Greedy', known: 'Star of the “Funny Game” eating-challenge videos, famous for his samosa showdowns and friendly rivalry with Muzamil.', gift: 'feast', giftText: 'SAMOSA FEAST! Grab them all!' }
+      cameo: { id: 'greedy', kind: 'greedy', type: 'internet', name: 'Mr Greedy', known: 'Star of the “Funny Game” eating-challenge videos, famous for his samosa showdowns and friendly rivalry with Muzamil.', gift: 'feast', giftText: 'SAMOSA FEAST! Grab them all!' },
+      cameo2: { id: 'ibra', kind: 'skater', type: 'internet', name: 'Ibra Raza', known: 'Ibrar Raza, the roller-skating waiter. His lightning-fast “skating service” clips — and the odd spilled tray — went viral in 2026 to the cheer “Ibra Raza on the beat!” He now skates for different restaurants, wearing each one’s shirt.', gift: 'skate', giftText: 'SKATING SERVICE! Ibra Raza on the beat!' }
     },
     {
       id: 'minar', part: 1, name: 'Minar-e-Pakistan', native: 'مینار پاکستان', tr: 'Mīnār-e-Pākistān',
@@ -641,10 +642,11 @@
     { id: 'word120', name: 'Master of letters', text: 'Spell all 120 words' },
     { id: 'wisdom10', name: 'Ten Wisdoms', text: 'Find all ten Wisdom scrolls' },
     { id: 'stamp20', name: 'Historian', text: 'Find all twenty History stamps' },
-    { id: 'cameo19', name: 'Guest list', text: 'Meet every cameo guest' },
+    { id: 'guests', name: 'Guest list', text: 'Meet every cameo guest' },
     { id: 'tyre', name: 'Tyre pilot', text: 'Get launched by the Tyre Launchers' },
     { id: 'arm', name: 'Arm of iron', text: 'Win an arm-wrestling duel' },
     { id: 'feast', name: 'Samosa champion', text: 'Catch 40 samosas in one feast' },
+    { id: 'skate', name: 'On the beat', text: 'Get roller skates from Ibra Raza' },
     { id: 'pillars', name: 'Five Pillars', text: 'Finish Part 1 · The Stories' },
     { id: 'summit', name: 'Roof of the world', text: 'Reach the top of K2' },
     { id: 'flawless', name: 'Sure-footed', text: 'Finish a scene without a single bump' }

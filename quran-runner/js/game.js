@@ -15,7 +15,8 @@
   var SECS = Math.max(5, +qs.get('secs') || D.sceneSeconds);
   var N = D.scenes.length;
   var TOTAL_WORDS = D.scenes.reduce(function (n, s) { return n + s.words.length; }, 0);
-  var TOTAL_CAMEOS = D.scenes.filter(function (s) { return s.cameo; }).length;
+  function guests(sc) { return [sc.cameo, sc.cameo2].filter(Boolean); }
+  var TOTAL_CAMEOS = D.scenes.reduce(function (n, s) { return n + guests(s).length; }, 0);
 
   /* ───────────────────────── SAVE ───────────────────────── */
   var SAVE_KEY = 'quran-runner-pk-v1';
@@ -78,7 +79,7 @@
     G.fx = { shield: false, fly: 0, magnet: 0, double: 0, slow: 0, dash: 0 }; G.max = {};
     G.wi = 0; G.li = 0; G.spelled = {}; G.round = 0;
     G.item = 0; G.itemAt = 26 * SECS / 60; G.itemTries = 0; G.gotItem = false;
-    G.cameo = 0; G.metCameo = false; G.gate = false; G.calm = 0; G.dip = 0; G.shake = 0;
+    G.cameo = 0; G.met = {}; G.skate = 0; G.gate = false; G.calm = 0; G.dip = 0; G.shake = 0;
     G.feast = 0; G.feastCount = 0; G.pendingArm = 0; G.armResult = null;
     seedProps(); setWord();
     // something to grab straight away: a line of coins, then the first letter
@@ -166,9 +167,9 @@
     } else Au.sfx('power');
     if (!quiet) toast(esc(name) + '<small>' + esc(pu.text) + '</small>', 'gold', 1500);
   }
-  function cameoEvent() {
-    var cm = G.sc.cameo, first = !G.metCameo; G.metCameo = true;
-    if (!save.cameos[cm.id]) { save.cameos[cm.id] = true; persist(); if (count(save.cameos) >= TOTAL_CAMEOS) award('cameo19'); }
+  function cameoEvent(cm) {
+    cm = cm || G.sc.cameo; var first = !G.met[cm.id]; G.met[cm.id] = true;
+    if (!save.cameos[cm.id]) { save.cameos[cm.id] = true; persist(); if (count(save.cameos) >= TOTAL_CAMEOS) award('guests'); }
     if (!first) { toast(esc(cm.name) + '<small>+25 ' + esc(G.part.coinName) + '</small>', 'gold', 1400); earn(25); return; }
     var card = $('cameoCard');
     card.innerHTML = '<div class="k">' + (cm.type === 'mascot' ? 'Legend of the place' : cm.type === 'legend' ? 'Pakistani legend' : 'Cameo') + '</div><div class="n">' + esc(cm.name) + '</div><div>' + esc(cm.known) + '</div><div class="g">' + esc(cm.giftText) + '</div>';
@@ -181,6 +182,9 @@
       case 'clear': clearObstacles(ZFAR + 10); G.calm = Math.max(G.calm, 2.5); Au.sfx('launch'); break;
       case 'heart': if (G.hearts < G.maxHearts) G.hearts++; else earn(50); Au.sfx('power'); break;
       case 'arm': G.pendingArm = 1.1; break;
+      case 'skate': // roller skates: a fast, unstoppable glide over a trail of spilled coins
+        activate('dash', true); G.fx.dash = G.max.dash = powerSecs('dash') * 1.5; G.skate = G.fx.dash;
+        coinCarpet(Math.round(G.speed * 1.7 * G.fx.dash) + 14); Au.boost(G.fx.dash); award('skate'); break;
     }
   }
   function earn(n) { save.coins += n; G.sceneCoins += n; }
@@ -249,7 +253,7 @@
     ['magnet', 'double', 'slow', 'dash'].forEach(function (n) { if (fx[n] > 0) fx[n] -= dt; });
     if (fx.fly > 0) { fx.fly -= dt; if (fx.fly <= 0) p.inv = Math.max(p.inv, 1.4); }
     if (p.inv > 0) p.inv -= dt; if (G.dip > 0) G.dip -= dt; if (G.calm > 0) G.calm -= dt;
-    if (G.shake > 0) G.shake -= dt; if (G.feast > 0) G.feast -= dt;
+    if (G.shake > 0) G.shake -= dt; if (G.feast > 0) G.feast -= dt; if (G.skate > 0) G.skate -= dt;
     if (G.pendingArm > 0 && (G.pendingArm -= dt) <= 0) { startArm(); return; }
 
     // the runner
@@ -264,7 +268,8 @@
       while (G.dist >= G.nextChunk) { var len = spawnChunk(); G.nextChunk += len + (16 - 7 * (G.idx / (N - 1))) + rnd(0, 4); }
       var cm = G.sc.cameo;
       if (cm && ((G.cameo === 0 && G.st > SECS * 0.15) || (G.cameo === 2 && G.st > SECS * 0.68))) {
-        G.objs.push({ k: 'cameo', x: G.cameo === 0 ? 2.25 : -2.25, z: SPAWN_Z }); G.cameo++;
+        var who = G.cameo === 0 ? cm : (G.sc.cameo2 || cm), side = G.cameo === 0 ? 1 : -1, sk = who.kind === 'skater';
+        G.objs.push({ k: 'cameo', cm: who, x: side * (sk ? 1.95 : 2.25), z: SPAWN_Z, skate: sk, paceT: sk ? 3.6 : 0 }); G.cameo++;
       }
       if (G.item === 0 && G.st > G.itemAt && G.itemTries < 3) {
         var lane = pick([-1, 0, 1]), zz = SPAWN_Z + 3;
@@ -282,7 +287,11 @@
       o = G.objs[i]; o.z -= mv;
       if (o.k === 'coin' && fx.magnet > 0 && o.z < magR && o.z > -1) { o.lane += (p.x - o.lane) * Math.min(1, dt * 9); o.y += (p.y + 0.8 - o.y) * Math.min(1, dt * 9); }
       if (o.k === 'gate') { if (o.z <= 0.2) { completeScene(); return; } continue; }
-      if (o.k === 'cameo') { if (!o.done && o.z < 14) { o.done = true; cameoEvent(); if (G.cameo === 1) G.cameo = 2; } if (o.z < ZNEAR - 2) G.objs.splice(i, 1); continue; }
+      if (o.k === 'cameo') {
+        if (!o.done && o.z < 14) { o.done = true; cameoEvent(o.cm); if (G.cameo === 1) G.cameo = 2; }
+        if (o.skate && o.done && o.paceT > 0) { o.paceT -= dt; o.z += mv; o.z += (6.5 - o.z) * Math.min(1, dt * 1.6); } // skates alongside you for a moment
+        if (o.z < ZNEAR - 2) G.objs.splice(i, 1); continue;
+      }
       if (!o.dead && o.z < 0.9 && o.z > -0.9) {
         var dx = Math.abs(o.lane - p.x);
         if (o.k === 'ob') {
@@ -333,7 +342,7 @@
     if (fx.fly > 0 || p.y > FLY_Y - 0.6) (G.sc.part === 1 ? Art.flyTyre : Art.carpet)(c, q.x, q.y + 0.04 * q.u, q.u, t);
     Art.player(c, q.x, q.y, q.u * 0.92, {
       t: t, phase: p.phase, slide: p.slide > 0 && p.y < 0.05, air: p.y > 0.05, robe: D.shop.robes[save.robe].c, hat: hatNow(),
-      outfit: G.sc.outfit, blink: p.inv > 0 && G.state === 'run' && Math.sin(t * 30) > 0, groundY: gq.y, height: p.y
+      outfit: G.sc.outfit, skates: G.skate > 0, blink: p.inv > 0 && G.state === 'run' && Math.sin(t * 30) > 0, groundY: gq.y, height: p.y
     });
     if (fx.shield) Art.shieldBubble(c, q.x, q.y - 0.85 * q.u, 1.05 * q.u, t);
     if (fx.magnet > 0) { c.save(); c.globalAlpha = 0.35; c.strokeStyle = '#ff6b6b'; c.lineWidth = 3; c.beginPath(); c.arc(q.x, q.y - 0.8 * q.u, (1.2 + Math.sin(t * 8) * 0.1) * q.u, 0, 6.283); c.stroke(); c.restore(); }
@@ -351,12 +360,12 @@
         q = proj(o.lane, 0, o.z); c.globalAlpha = a * 0.22; c.fillStyle = '#000'; c.beginPath(); c.ellipse(q.x, q.y, 0.5 * q.u, 0.09 * q.u, 0, 0, 6.283); c.fill(); c.globalAlpha = a;
         Art.obstacle(c, o.cls, o.style, q.x, q.y, q.u, t); break;
       case 'cameo':
-        q = proj(o.x, 0, o.z); Art.cameo(c, sc.cameo.kind, q.x, q.y, q.u * 1.2, t);
+        var gm = o.cm || sc.cameo; q = proj(o.x, 0, o.z); Art.cameo(c, gm.kind, q.x, q.y, q.u * 1.2, t);
         if (o.z < 75) {
           var fs = Math.max(10, Math.min(20, q.u * 0.3)); c.font = '800 ' + fs + 'px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
-          var tw = c.measureText(sc.cameo.name).width + fs * 1.2, ty = q.y - 2.75 * q.u;
+          var tw = c.measureText(gm.name).width + fs * 1.2, ty = q.y - 2.75 * q.u;
           c.fillStyle = '#01411c'; c.beginPath(); c.roundRect(q.x - tw / 2, ty - fs * 0.85, tw, fs * 1.7, fs * 0.85); c.fill();
-          c.fillStyle = '#ffffff'; c.fillText(sc.cameo.name, q.x, ty + 1);
+          c.fillStyle = '#ffffff'; c.fillText(gm.name, q.x, ty + 1);
         }
         break;
       case 'gate': q = proj(0, 0, o.z); Art.gate(c, q.x, q.y, q.u, V.lane * q.s, t); break;
@@ -433,7 +442,8 @@
   }
   function itemLabel(sc) { return sc.item.kind === 'scroll' ? 'Wisdom scroll ' + arNum(sc.item.n) : 'History stamp'; }
   function cameoBox(sc) {
-    if (sc.cameo) { var cm = sc.cameo; return '<div class="box cameo"><span class="k">' + (cm.type === 'mascot' ? 'Legend of the place' : cm.type === 'legend' ? 'Pakistani legend on the roadside' : 'Cameo on the roadside') + '</span><b>' + esc(cm.name) + '</b>' + esc(cm.known) + '</div>'; }
+    var gs = guests(sc);
+    if (gs.length) return gs.map(function (cm) { return '<div class="box cameo"><span class="k">' + (cm.type === 'mascot' ? 'Legend of the place' : cm.type === 'legend' ? 'Pakistani legend on the roadside' : 'Cameo on the roadside') + '</span><b>' + esc(cm.name) + '</b>' + esc(cm.known) + '</div>'; }).join('');
     if (sc.quiet) return '<div class="box quiet">' + esc(sc.quiet) + '</div>';
     return '';
   }
@@ -473,7 +483,7 @@
       '<div class="eyebrow">' + esc(S.sceneDone) + ' · ' + (G.idx + 1) + ' of ' + N + '</div><h2>' + esc(sc.name) + '</h2>' +
       '<p class="cheer"><span class="native" dir="rtl">' + esc(cheer[0]) + '</span>' + esc(cheer[1]) + ' — ' + esc(cheer[2]) + '</p>' +
       '<div class="stats"><div class="stat"><b>' + G.sceneCoins + '</b>' + esc(G.part.coinName) + '</div><div class="stat"><b>' + spelled + ' / ' + sc.words.length + '</b>words spelled</div><div class="stat"><b>' + G.bumps + '</b>bumps</div></div>' +
-      chips(sc, true) + itemHtml + (sc.cameo && G.metCameo ? '<div class="box cameo"><span class="k">You met</span><b>' + esc(sc.cameo.name) + '</b></div>' : '') +
+      chips(sc, true) + itemHtml + (function () { var m = guests(sc).filter(function (g) { return G.met[g.id]; }).map(function (g) { return esc(g.name); }); return m.length ? '<div class="box cameo"><span class="k">You met</span><b>' + m.join(' and ') + '</b></div>' : ''; })() +
       '<div class="btn-col"><button id="o-next" class="btn primary">' + (G.idx === N - 1 ? 'Finish' : esc(S.next)) + '</button><div class="btn-row"><button id="o-again" class="btn">Play again</button><button id="o-title" class="btn">' + esc(S.quit) + '</button></div></div>';
     $('o-next').onclick = nextScene; $('o-again').onclick = function () { openIntro(G.idx); }; $('o-title').onclick = openTitle;
     show('s-outro');
@@ -547,8 +557,8 @@
       });
     } else if (albumTab === 'cameos') {
       D.scenes.forEach(function (sc, i) {
-        var cm = sc.cameo; if (!cm) return; var has = save.cameos[cm.id];
-        html += '<div class="tile ' + (has ? 'done' : 'locked') + '"><span class="num">SCENE ' + (i + 1) + ' · ' + esc(sc.name).toUpperCase() + '</span><span class="nm">' + (has ? esc(cm.name) : '???') + '</span>' + (has ? esc(cm.known) : 'Meet this guest on the roadside.') + '</div>';
+        guests(sc).forEach(function (cm) { var has = save.cameos[cm.id];
+        html += '<div class="tile ' + (has ? 'done' : 'locked') + '"><span class="num">SCENE ' + (i + 1) + ' · ' + esc(sc.name).toUpperCase() + '</span><span class="nm">' + (has ? esc(cm.name) : '???') + '</span>' + (has ? esc(cm.known) : 'Meet this guest on the roadside.') + '</div>'; });
       });
     } else if (albumTab === 'words') {
       D.scenes.forEach(function (sc) { sc.words.forEach(function (w) { var has = save.words[w[0]]; html += '<div class="tile ' + (has ? 'done' : 'locked') + '"><span class="native" dir="rtl">' + esc(w[0]) + '</span><span class="nm">' + esc(w[1]) + '</span>' + esc(w[2]) + '</div>'; }); });
