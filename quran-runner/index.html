@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b3d2e">
+<title>Quran Runner — Pakistan Journey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="game" aria-label="Game"></canvas>
+
+<!-- Heads-up display shown while running -->
+<div id="hud" class="hidden">
+  <div class="hud-top">
+    <div class="hud-side">
+      <div id="hearts" class="pill"></div>
+      <div class="pill"><span class="coin-dot"></span><span id="coins">0</span></div>
+    </div>
+    <div id="wordPanel">
+      <div id="wordNative" class="native" dir="rtl"></div>
+      <div id="wordMeta"></div>
+      <div id="wordSlots" dir="rtl"></div>
+    </div>
+    <div class="hud-side right">
+      <div class="pill" id="score">0</div>
+      <button id="btnPause" class="icon-btn" aria-label="Pause">II</button>
+    </div>
+  </div>
+  <div id="progressWrap"><div id="progressBar"></div><div id="sceneLabel"></div></div>
+  <div id="toast"></div>
+  <div id="cameoCard" class="hidden"></div>
+  <div id="hint" class="hidden"></div>
+</div>
+
+<!-- Full-screen cards -->
+<div id="screens">
+  <section id="s-title" class="screen">
+    <div class="card title-card">
+      <div class="crest" aria-hidden="true"><span></span></div>
+      <h1 id="t-title"></h1>
+      <h2 id="t-sub"></h2>
+      <p id="t-tag" class="tag"></p>
+      <p id="t-blurb" class="muted"></p>
+      <div class="btn-col">
+        <button id="b-continue" class="btn primary hidden"></button>
+        <button id="b-new" class="btn primary"></button>
+        <button id="b-pk" class="btn green"></button>
+        <div class="btn-row">
+          <button id="b-scenes" class="btn"></button>
+          <button id="b-album" class="btn"></button>
+          <button id="b-shop" class="btn"></button>
+        </div>
+        <div class="btn-row">
+          <button id="b-how" class="btn ghost"></button>
+          <button id="b-sound" class="btn ghost"></button>
+        </div>
+      </div>
+      <p id="t-fact" class="fact"></p>
+      <p id="t-credits" class="credits"></p>
+    </div>
+  </section>
+
+  <section id="s-intro" class="screen hidden"><div class="card" id="introCard"></div></section>
+  <section id="s-outro" class="screen hidden"><div class="card" id="outroCard"></div></section>
+  <section id="s-msg" class="screen hidden"><div class="card" id="msgCard"></div></section>
+  <section id="s-pause" class="screen hidden">
+    <div class="card small">
+      <h2 id="p-title"></h2>
+      <div class="btn-col">
+        <button id="p-resume" class="btn primary"></button>
+        <button id="p-restart" class="btn"></button>
+        <button id="p-sound" class="btn ghost"></button>
+        <button id="p-quit" class="btn ghost"></button>
+      </div>
+    </div>
+  </section>
+  <section id="s-list" class="screen hidden"><div class="card wide" id="listCard"></div></section>
+
+  <section id="s-arm" class="screen hidden">
+    <div class="card small arm-card">
+      <h2 id="a-title"></h2>
+      <svg id="armSvg" viewBox="0 0 300 150" aria-hidden="true">
+        <rect x="20" y="118" width="260" height="10" rx="4" fill="#8a5a32"/>
+        <line id="armL" x1="70" y1="118" x2="150" y2="50" stroke="#c68e62" stroke-width="18" stroke-linecap="round"/>
+        <line id="armR" x1="230" y1="118" x2="150" y2="50" stroke="#a9744c" stroke-width="18" stroke-linecap="round"/>
+        <circle id="armFist" cx="150" cy="50" r="15" fill="#c68e62" stroke="#7a4a2c" stroke-width="3"/>
+        <text x="40" y="145" font-size="13" fill="#fff" font-weight="700">YOU</text>
+        <text x="205" y="145" font-size="13" fill="#fff" font-weight="700">CHAMPION</text>
+      </svg>
+      <div class="arm-bar"><div id="armFill"></div><div class="arm-mid"></div></div>
+      <p id="a-hint" class="muted"></p>
+      <button id="a-tap" class="btn primary big">TAP!</button>
+    </div>
+  </section>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/art.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

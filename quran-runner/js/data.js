@@ -1,0 +1,718 @@
+/* Quran Runner — Pakistan Journey
+ * Content file: every word, place, story, fact and cameo lives here.
+ * The engine (game.js) only reads from QR.DATA, so the game can be re-themed
+ * or corrected by editing this file alone.
+ *
+ * Content rules followed in this file:
+ *  - Nobody holy is shown or named as a character. Scenes are places, objects,
+ *    plants and animals only.
+ *  - No name of God is ever a letter you catch.
+ *  - Quran verses are given by reference and retold in simple English.
+ *  - Cameo guests appear only in Part 2 (Pakistan). They are described by what
+ *    they are publicly known for; the game puts no invented words in their mouths.
+ */
+(function () {
+  'use strict';
+  var QR = (window.QR = window.QR || {});
+
+  /* ───────────────────────── LETTERS ───────────────────────── */
+  // Arabic: 28 letters in alphabet order with their abjad number values.
+  var AR = [
+    ['ا', 'alif', 1], ['ب', 'bā’', 2], ['ت', 'tā’', 400], ['ث', 'thā’', 500],
+    ['ج', 'jīm', 3], ['ح', 'ḥā’', 8], ['خ', 'khā’', 600], ['د', 'dāl', 4],
+    ['ذ', 'dhāl', 700], ['ر', 'rā’', 200], ['ز', 'zāy', 7], ['س', 'sīn', 60],
+    ['ش', 'shīn', 300], ['ص', 'ṣād', 90], ['ض', 'ḍād', 800], ['ط', 'ṭā’', 9],
+    ['ظ', 'ẓā’', 900], ['ع', 'ʿayn', 70], ['غ', 'ghayn', 1000], ['ف', 'fā’', 80],
+    ['ق', 'qāf', 100], ['ك', 'kāf', 20], ['ل', 'lām', 30], ['م', 'mīm', 40],
+    ['ن', 'nūn', 50], ['ه', 'hā’', 5], ['و', 'wāw', 6], ['ي', 'yā’', 10]
+  ];
+  // Extra written forms used in Arabic words.
+  var AR_EXTRA = [
+    ['ة', 'tā’ marbūṭah'], ['ى', 'alif maqṣūrah'], ['ء', 'hamzah'],
+    ['أ', 'alif with hamzah above'], ['إ', 'alif with hamzah below'],
+    ['آ', 'alif maddah'], ['ؤ', 'wāw with hamzah'], ['ئ', 'yā’ with hamzah']
+  ];
+  // Urdu adds these letters to the Arabic set (and writes k, h, y with its own shapes).
+  var UR_EXTRA = [
+    ['پ', 'pe'], ['ٹ', 'ṭe'], ['چ', 'che'], ['ڈ', 'ḍāl'], ['ڑ', 'ṛe'],
+    ['ژ', 'zhe'], ['ک', 'kāf'], ['گ', 'gāf'], ['ں', 'nūn ghunnah'],
+    ['ھ', 'do-chashmī he'], ['ہ', 'choṭī he'], ['ی', 'choṭī ye'], ['ے', 'baṛī ye']
+  ];
+  var LETTERS = {};
+  AR.forEach(function (l) { LETTERS[l[0]] = { name: l[1], abjad: l[2], set: 'ar' }; });
+  AR_EXTRA.forEach(function (l) { LETTERS[l[0]] = { name: l[1], set: 'ar' }; });
+  UR_EXTRA.forEach(function (l) { LETTERS[l[0]] = { name: l[1], set: 'ur' }; });
+
+  // Which letters each language is allowed to use (checked by tools/check-data.js).
+  var ALPHABET = {
+    ar: AR.map(function (l) { return l[0]; }).concat(AR_EXTRA.map(function (l) { return l[0]; })),
+    ur: 'ا آ ب پ ت ٹ ث ج چ ح خ د ڈ ذ ر ڑ ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ں و ؤ ہ ھ ء ئ ی ے'.split(' ')
+  };
+
+  var NUMERALS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+
+  /* ───────────────────────── PARTS ───────────────────────── */
+  var PARTS = [
+    {
+      id: 'stories', title: 'Part 1 · The Stories', sub: 'Ten places from the Quran, from the First Garden to the Kaaba',
+      coinName: 'dinars', lang: 'ar', langName: 'Arabic', itemName: 'Wisdom scroll', flyName: 'Flying carpet', slowName: 'Sakinah (calm)',
+      cheers: [
+        ['ما شاء الله', 'Mā shā’ Allāh', 'What God has willed!'],
+        ['الحمد لله', 'Al-ḥamdu lillāh', 'Praise be to God'],
+        ['سبحان الله', 'Subḥān Allāh', 'Glory be to God'],
+        ['أحسنت', 'Aḥsant', 'Well done!'],
+        ['ممتاز', 'Mumtāz', 'Excellent!'],
+        ['رائع', 'Rā’iʿ', 'Wonderful!'],
+        ['بارك الله فيك', 'Bārak Allāhu fīk', 'God bless you'],
+        ['جزاك الله خيرا', 'Jazāk Allāhu khayran', 'May God reward you with good']
+      ]
+    },
+    {
+      id: 'pakistan', title: 'Part 2 · Pakistan', sub: 'Twenty stops from the Arabian Sea to K2, through 4,500 years of history',
+      coinName: 'rupees', lang: 'ur', langName: 'Urdu', itemName: 'History stamp', flyName: 'Tyre launch', slowName: 'Chai break',
+      cheers: [
+        ['شاباش', 'Shābāsh', 'Well done!'],
+        ['زبردست', 'Zabardast', 'Awesome!'],
+        ['واہ واہ', 'Wāh wāh', 'Bravo!'],
+        ['کمال', 'Kamāl', 'Brilliant!'],
+        ['بہت خوب', 'Bahut khūb', 'Very nice!'],
+        ['چھا گئے', 'Chhā gaye', 'You nailed it!'],
+        ['پاکستان زندہ باد', 'Pākistān zindabād', 'Long live Pakistan!'],
+        ['ما شاء اللہ', 'Māshā’Allāh', 'What God has willed!']
+      ]
+    }
+  ];
+
+  /* ───────────────────────── SCENES ─────────────────────────
+   * 30 scenes, about one minute each.
+   * words: [script, how to say it, meaning]
+   * obst:  low = jump over, high = slide under, full = change lane. [draw style, name]
+   */
+  var SCENES = [
+    /* ═════════════ PART 1 · THE STORIES ═════════════ */
+    {
+      id: 'garden', part: 0, name: 'The First Garden', native: 'الجنة', tr: 'al-Jannah',
+      where: 'The Garden', when: 'The beginning',
+      banner: 'Where the story of people begins',
+      story: 'The first people were given a beautiful garden with every good thing to enjoy, and one tree to leave alone. They slipped, they said sorry, and they were forgiven. Then the long journey on Earth began.',
+      ref: 'Quran 2:35–37 · 7:19–23',
+      sky: ['#5fb4f5', '#bfe6ff', '#f4ffe0'], sun: { x: 0.8, y: 0.2, r: 0.05, c: '#fff6b8' }, clouds: 1,
+      far: { type: 'hills', c1: '#8fd18f', c2: '#58ad63' },
+      lm: { name: 'tree', x: 0.5, s: 1.15 },
+      ground: { road: '#dcc797', line: '#fff6d8', side: '#5cb860', side2: '#4fa955', edge: '#b99d66' },
+      props: ['tree', 'bush', 'flower', 'flower', 'bush'], weather: 'petals', wcol: '#ffd1e8',
+      obst: { low: ['log', 'fallen branch'], high: ['branch', 'low bough'], full: ['boulder', 'mossy boulder'] },
+      chaser: 'A whirl of falling leaves', coin: 'pearl',
+      words: [['جنة', 'jannah', 'garden'], ['شجرة', 'shajarah', 'tree'], ['نهر', 'nahr', 'river'], ['ثمر', 'thamar', 'fruit']],
+      item: { kind: 'scroll', n: 1, title: 'Worship the One', text: 'Worship God alone.', ref: 'Surat al-Isra 17:23' }
+    },
+    {
+      id: 'ark', part: 0, name: 'The Ark of Nuh', native: 'سفينة نوح', tr: 'Safīnat Nūḥ',
+      where: 'The great flood', when: 'Long, long ago',
+      banner: 'Two of every creature, safe above the waves',
+      story: 'A great ship was built far from any sea while people laughed. When the rain fell and the water rose, the believers and a pair of every animal sailed safely, until the ship came to rest on Mount Judi.',
+      ref: 'Quran 11:36–44',
+      sky: ['#26334f', '#4b6180', '#93a9b8'], clouds: 2,
+      far: { type: 'sea', c1: '#3f6f8f', c2: '#2c5674' },
+      lm: { name: 'ark', x: 0.5, s: 1.1 },
+      ground: { road: '#6c7480', line: '#a9b6c2', side: '#3d6a66', side2: '#345d5a', edge: '#4d5661' },
+      props: ['rock', 'reed', 'reed', 'bush'], weather: 'rain', wcol: '#cfe6ff',
+      obst: { low: ['crate', 'cargo crate'], high: ['rope', 'ship rope'], full: ['boulder', 'slippery rock'] },
+      chaser: 'The rising flood', coin: 'pearl',
+      words: [['سفينة', 'safīnah', 'ship'], ['ماء', 'mā’', 'water'], ['مطر', 'maṭar', 'rain'], ['جبل', 'jabal', 'mountain']],
+      item: { kind: 'scroll', n: 2, title: 'Honour your parents', text: 'Be kind to your parents. Never say even “uff” to them — speak to them with honour and gentleness.', ref: 'Surat al-Isra 17:23–24' }
+    },
+    {
+      id: 'fire', part: 0, name: 'The Cool Fire', native: 'نار إبراهيم', tr: 'Nār Ibrāhīm',
+      where: 'A city of idols', when: 'The time of Ibrahim',
+      banner: 'The fire that turned cool and safe',
+      story: 'A young man asked his people why they bowed to statues that could not speak. The angry king built a huge fire — but the fire was commanded to be cool and safe, and it did not harm him.',
+      ref: 'Quran 21:51–70',
+      sky: ['#160d2e', '#4b1d50', '#e06a3c'], stars: 1,
+      far: { type: 'city', c1: '#3a1f3f', c2: '#2a1530' },
+      lm: { name: 'ziggurat', x: 0.5, s: 1.05 },
+      ground: { road: '#8a6a52', line: '#e0b27a', side: '#5a3a35', side2: '#4d302c', edge: '#6b4c3c' },
+      props: ['pillar', 'torch', 'palm', 'pot'], weather: 'embers', wcol: '#ffb347',
+      obst: { low: ['pots', 'clay pots'], high: ['beam', 'temple beam'], full: ['pillar', 'broken idol stand'] },
+      chaser: 'The king’s guards', coin: 'shell',
+      words: [['نار', 'nār', 'fire'], ['سلام', 'salām', 'peace'], ['نجم', 'najm', 'star'], ['قمر', 'qamar', 'moon']],
+      item: { kind: 'scroll', n: 3, title: 'Give to others', text: 'Give what is due to your relatives, to the needy and to the traveller.', ref: 'Surat al-Isra 17:26' }
+    },
+    {
+      id: 'zamzam', part: 0, name: 'The Valley of Zamzam', native: 'زمزم', tr: 'Zamzam',
+      where: 'A dry valley, later called Makkah', when: 'The time of Ibrahim and Ismail',
+      banner: 'Water in the valley with no plants',
+      story: 'A mother and her baby were left in a bare valley near the Sacred House. Tradition tells that she ran between two hills, Safa and Marwa, looking for water — and a spring called Zamzam burst from the ground. It still flows today.',
+      ref: 'Quran 14:37 · 2:158',
+      sky: ['#f4bd62', '#ffe0a3', '#fff5da'], sun: { x: 0.5, y: 0.16, r: 0.07, c: '#fffbe0' },
+      far: { type: 'dunes', c1: '#e3b877', c2: '#cc9a58' },
+      lm: { name: 'spring', x: 0.5, s: 1.1 },
+      ground: { road: '#e8cf9c', line: '#fff3cf', side: '#d9b06c', side2: '#cfa35c', edge: '#b98f4f' },
+      props: ['rock', 'thornbush', 'rock', 'tent'], weather: 'dust', wcol: '#f7deaa',
+      obst: { low: ['rock', 'hot stones'], high: ['branch', 'thorn branch'], full: ['boulder', 'desert boulder'] },
+      chaser: 'The burning midday heat', coin: 'shell',
+      words: [['زمزم', 'Zamzam', 'the Zamzam spring'], ['صبر', 'ṣabr', 'patience'], ['أم', 'umm', 'mother'], ['وادي', 'wādī', 'valley']],
+      item: { kind: 'scroll', n: 4, title: 'Do not waste', text: 'Do not waste what you have been given.', ref: 'Surat al-Isra 17:26–27' }
+    },
+    {
+      id: 'well', part: 0, name: 'The Well of Yusuf', native: 'بئر يوسف', tr: 'Bi’r Yūsuf',
+      where: 'A desert road to Egypt', when: 'The time of Yaqub and Yusuf',
+      banner: 'A dream of eleven stars, the sun and the moon',
+      story: 'Jealous brothers left a boy at the bottom of a well. A passing caravan lowered a bucket and found him, and he was taken to Egypt. Years later the dream he had seen as a child came true, and he forgave his brothers.',
+      ref: 'Quran 12:4–20 · 12:100',
+      sky: ['#34265e', '#a8527a', '#f2a35a'], stars: 2,
+      far: { type: 'dunes', c1: '#b57a55', c2: '#925c44' },
+      lm: { name: 'well', x: 0.5, s: 1.05 },
+      ground: { road: '#d6b07a', line: '#f5dfb0', side: '#b98652', side2: '#aa7847', edge: '#96693c' },
+      props: ['palm', 'rock', 'tent', 'camel'], weather: 'sand', wcol: '#f0c98a',
+      obst: { low: ['basket', 'trade baskets'], high: ['rope', 'well rope'], full: ['camel', 'resting camel'] },
+      chaser: 'A rolling sandstorm', coin: 'silver',
+      words: [['بئر', 'bi’r', 'well'], ['قميص', 'qamīṣ', 'shirt'], ['ذئب', 'dhi’b', 'wolf'], ['حلم', 'ḥulm', 'dream']],
+      item: { kind: 'scroll', n: 5, title: 'Speak gently', text: 'If you cannot help someone right now, at least speak to them with gentle words.', ref: 'Surat al-Isra 17:28' }
+    },
+    {
+      id: 'sea', part: 0, name: 'The Parted Sea', native: 'البحر', tr: 'al-Baḥr',
+      where: 'The edge of the sea', when: 'The time of Musa',
+      banner: 'A dry road between two walls of water',
+      story: 'With the sea in front and an army behind, the people thought they were trapped. The sea was struck with a staff and it split apart, each side like a towering mountain, and they crossed on dry ground.',
+      ref: 'Quran 26:60–67 · 20:77',
+      sky: ['#234a8f', '#5fa8d3', '#ffdba3'], sun: { x: 0.5, y: 0.36, r: 0.06, c: '#fff1c4' },
+      far: { type: 'waterwalls', c1: '#2f86c4', c2: '#1d5f96' },
+      lm: null,
+      ground: { road: '#cbb27f', line: '#f2e2b5', side: '#2b77ad', side2: '#246a9c', edge: '#a8905f' },
+      props: ['coral', 'rock', 'shellrock', 'coral'], weather: 'spray', wcol: '#d7f1ff',
+      obst: { low: ['rock', 'seabed rocks'], high: ['rope', 'hanging seaweed'], full: ['boulder', 'coral boulder'] },
+      chaser: 'Pharaoh’s chariots', coin: 'silver',
+      words: [['بحر', 'baḥr', 'sea'], ['عصا', 'ʿaṣā', 'staff'], ['طريق', 'ṭarīq', 'road'], ['موج', 'mawj', 'waves']],
+      item: { kind: 'scroll', n: 6, title: 'Keep the middle way', text: 'Do not be tight-fisted, and do not throw everything away either. Keep to the middle.', ref: 'Surat al-Isra 17:29' }
+    },
+    {
+      id: 'fish', part: 0, name: 'The Great Fish', native: 'الحوت', tr: 'al-Ḥūt',
+      where: 'A stormy sea, then a quiet shore', when: 'The time of Yunus',
+      banner: 'A prayer from the deepest dark',
+      story: 'A man left his people in anger and sailed away on a crowded ship. In the storm he was swallowed by a great fish. In the darkness he prayed and admitted his mistake — and he was set down safely on the shore, where a gourd plant grew to shade him.',
+      ref: 'Quran 37:139–148 · 21:87–88',
+      sky: ['#050f2a', '#0c2a52', '#176184'], stars: 1, moon: { x: 0.24, y: 0.2, r: 0.05 },
+      far: { type: 'sea', c1: '#0f4466', c2: '#0a3350' },
+      lm: { name: 'whale', x: 0.66, s: 1.1 },
+      ground: { road: '#b8a67c', line: '#e6d9ae', side: '#1c5b78', side2: '#17506b', edge: '#93835c' },
+      props: ['rock', 'reed', 'gourd', 'shellrock'], weather: 'rain', wcol: '#9fd0ff',
+      obst: { low: ['crate', 'washed-up crate'], high: ['rope', 'torn sail rope'], full: ['boat', 'beached boat'] },
+      chaser: 'The storm waves', coin: 'pearl',
+      words: [['حوت', 'ḥūt', 'great fish'], ['ليل', 'layl', 'night'], ['دعاء', 'duʿā’', 'prayer'], ['ساحل', 'sāḥil', 'shore']],
+      item: { kind: 'scroll', n: 7, title: 'Every life is precious', text: 'Every life is precious. Cherish children, and never harm a soul unjustly.', ref: 'Surat al-Isra 17:31, 17:33' }
+    },
+    {
+      id: 'cave', part: 0, name: 'The Cave of the Sleepers', native: 'الكهف', tr: 'al-Kahf',
+      where: 'A hidden cave in the hills', when: 'Centuries before the Prophet',
+      banner: 'They slept for 309 years, their dog at the door',
+      story: 'A group of young believers ran from a cruel city and hid in a cave. They fell asleep with their dog stretched out at the entrance, and the sun leaned away from them each day. When they woke, three hundred and nine years had passed.',
+      ref: 'Quran 18:9–26',
+      sky: ['#eeb061', '#ffd79b', '#ffedcf'], sun: { x: 0.18, y: 0.3, r: 0.055, c: '#fff3c9' },
+      far: { type: 'cliffs', c1: '#b9855c', c2: '#96694a' },
+      lm: { name: 'cave', x: 0.5, s: 1.15 },
+      ground: { road: '#cfae84', line: '#f3dcb4', side: '#9a7b58', side2: '#8d704f', edge: '#7c6142' },
+      props: ['rock', 'bush', 'pine', 'rock'], weather: 'dust', wcol: '#ffe6b8',
+      obst: { low: ['rock', 'loose stones'], high: ['branch', 'hanging roots'], full: ['boulder', 'cave boulder'] },
+      chaser: 'The city’s soldiers', coin: 'silver',
+      words: [['كهف', 'kahf', 'cave'], ['كلب', 'kalb', 'dog'], ['شمس', 'shams', 'sun'], ['نوم', 'nawm', 'sleep']],
+      item: { kind: 'scroll', n: 8, title: 'Protect the orphan', text: 'Guard an orphan’s property with great care until they are grown.', ref: 'Surat al-Isra 17:34' }
+    },
+    {
+      id: 'hira', part: 0, name: 'The Mountain of Light', native: 'غار حراء', tr: 'Ghār Ḥirā’',
+      where: 'A cave above Makkah', when: 'About 610 CE',
+      banner: 'The first word: Read!',
+      story: 'High on a mountain above Makkah is a small cave called Hira. Here the first words of the Quran were revealed, beginning with the command “Read!” — and teaching that people were taught by the pen.',
+      ref: 'Quran 96:1–5',
+      sky: ['#040922', '#101b4a', '#2c3272'], stars: 3, moon: { x: 0.8, y: 0.16, r: 0.04 },
+      far: { type: 'mountains', c1: '#1a2150', c2: '#11163a' },
+      lm: { name: 'hira', x: 0.5, s: 1.05 },
+      ground: { road: '#6f6a7d', line: '#b8b3cc', side: '#3a375a', side2: '#32304f', edge: '#514d68' },
+      props: ['rock', 'thornbush', 'rock', 'rock'], weather: 'sparkle', wcol: '#fff6c9',
+      obst: { low: ['rock', 'mountain stones'], high: ['beam', 'rock ledge'], full: ['boulder', 'granite boulder'] },
+      chaser: 'Tumbling mountain stones', coin: 'gold',
+      words: [['اقرأ', 'iqra’', 'read!'], ['قلم', 'qalam', 'pen'], ['نور', 'nūr', 'light'], ['علم', 'ʿilm', 'knowledge']],
+      item: { kind: 'scroll', n: 9, title: 'Keep your word', text: 'Keep your promises, and weigh and measure fairly.', ref: 'Surat al-Isra 17:34–35' }
+    },
+    {
+      id: 'kaaba', part: 0, name: 'The Kaaba', native: 'الكعبة', tr: 'al-Kaʿbah',
+      where: 'Makkah', when: 'Built by Ibrahim and Ismail',
+      banner: 'The first House built for people to worship',
+      story: 'A father and son raised the walls of a simple cube-shaped house and prayed that it would be accepted. People have travelled to it ever since, from every distant road. Once an army with elephants marched to destroy it — and was stopped by flocks of birds.',
+      ref: 'Quran 2:125–127 · 3:96 · 22:27 · 105:1–5',
+      sky: ['#ffc977', '#ffe6b6', '#fff8e8'], sun: { x: 0.2, y: 0.18, r: 0.06, c: '#fffbe6' },
+      far: { type: 'hills', c1: '#d9b98a', c2: '#c09c6c' },
+      lm: { name: 'kaaba', x: 0.5, s: 1.2 },
+      ground: { road: '#f3efe6', line: '#d8c9a0', side: '#e6d6b4', side2: '#dccba6', edge: '#c9b58a' },
+      props: ['palm', 'lamp', 'arch', 'lamp'], weather: 'birds', wcol: '#5a4a3a',
+      obst: { low: ['basket', 'date baskets'], high: ['banner', 'cloth canopy'], full: ['pillar', 'marble pillar'] },
+      chaser: 'The army of the elephant', coin: 'dinar', outfit: 'ihram',
+      words: [['كعبة', 'Kaʿbah', 'the Kaaba'], ['بيت', 'bayt', 'house'], ['حج', 'ḥajj', 'pilgrimage'], ['مكة', 'Makkah', 'Makkah']],
+      item: { kind: 'scroll', n: 10, title: 'Walk humbly', text: 'Do not follow what you do not know, and do not walk the earth proudly.', ref: 'Surat al-Isra 17:36–37' }
+    },
+
+    /* ═════════════ PART 2 · PAKISTAN ═════════════ */
+    {
+      id: 'makran', part: 1, name: 'The Makran Coast', native: 'ساحل مکران', tr: 'Sāhil-e-Makrān',
+      where: 'Balochistan', when: '711 CE · 1958',
+      banner: 'The sea road from Arabia reaches Pakistan',
+      story: 'For centuries dhows sailed between Arabia and this coast. In 711 CE travellers and armies came along the Makran shore toward Sindh, which is why Sindh is called Bab-ul-Islam, the Gateway of Islam. The port of Gwadar belonged to Oman for about 175 years before it joined Pakistan in 1958.',
+      ref: 'Balochistan · Arabian Sea',
+      sky: ['#3aa4f2', '#9cdbff', '#fff0c8'], sun: { x: 0.82, y: 0.2, r: 0.055, c: '#fff8cf' }, clouds: 1,
+      far: { type: 'sea', c1: '#2e9fc9', c2: '#1f84ad' },
+      lm: { name: 'princess', x: 0.3, s: 1.1 },
+      ground: { road: '#5b6068', line: '#f4f4f4', side: '#e2c690', side2: '#d8ba82', edge: '#c9a86c' },
+      props: ['rock', 'boat', 'palm', 'shellrock'], weather: 'birds', wcol: '#ffffff',
+      obst: { low: ['crate', 'fish crates'], high: ['rope', 'drying fishing nets'], full: ['boat', 'fishing boat'] },
+      chaser: 'A grumpy army of crabs', coin: 'rupee', hat: 'turban',
+      words: [['سمندر', 'samandar', 'sea'], ['لہر', 'lehr', 'wave'], ['کشتی', 'kashtī', 'boat'], ['مچھلی', 'machhlī', 'fish']],
+      item: { kind: 'stamp', title: 'Hingol & the Princess of Hope', text: 'Hingol on the Makran coast is Pakistan’s largest national park. Wind and rain carved one of its rocks into a shape like a statue — the “Princess of Hope”. Green turtles nest on these beaches.', ref: 'Balochistan' },
+      cameo: { id: 'mooroo', kind: 'vlogger', type: 'internet', name: 'Mooroo', known: 'Lahore-born musician, filmmaker and vlogger (real name Taimoor Salahuddin) whose travel films show off Pakistan.', gift: 'magnet', giftText: 'Camera rolling — coin magnet!' }
+    },
+    {
+      id: 'karachi', part: 1, name: 'Karachi, City of Lights', native: 'کراچی', tr: 'Karāchī',
+      where: 'Sindh', when: '14 August 1947',
+      banner: 'Pakistan’s first capital and biggest city',
+      story: 'On 14 August 1947 Pakistan became an independent country, and Karachi was its first capital. Muhammad Ali Jinnah — the Quaid-e-Azam, “Great Leader” — was born in this city and rests here in a white marble mausoleum, finished in 1971.',
+      ref: 'Sindh · Arabian Sea',
+      sky: ['#1a1d4a', '#7a3f8a', '#ff9a66'], stars: 1,
+      far: { type: 'city', c1: '#2b2456', c2: '#1d1840', lit: 1 },
+      lm: { name: 'mazar', x: 0.5, s: 1.1 },
+      ground: { road: '#4a4d57', line: '#ffd866', side: '#3f5a52', side2: '#375047', edge: '#2f3238' },
+      props: ['lamp', 'palm', 'stall', 'rickshaw'], weather: 'lights', wcol: '#ffd27a',
+      obst: { low: ['crate', 'mango crates'], high: ['wire', 'low festival lights'], full: ['rickshaw', 'parked rickshaw'] },
+      chaser: 'Rush-hour rickshaws', coin: 'rupee',
+      words: [['شہر', 'shehr', 'city'], ['روشنی', 'roshnī', 'light'], ['آزادی', 'āzādī', 'freedom'], ['قائد', 'qā’id', 'leader']],
+      item: { kind: 'stamp', title: 'Independence, 1947', text: 'Pakistan was born on 14 August 1947 with Karachi as its capital. Here too, Abdul Sattar Edhi began a one-van ambulance service that grew into the largest volunteer ambulance network in the world.', ref: 'Karachi, Sindh' },
+      cameo: { id: 'junejo', kind: 'vlogger', type: 'internet', name: 'Irfan Junejo', known: 'Karachi filmmaker and one of Pakistan’s best-loved vloggers.', gift: 'magnet', giftText: 'Vlog time — coin magnet!' }
+    },
+    {
+      id: 'makli', part: 1, name: 'Makli & Thatta', native: 'مکلی', tr: 'Maklī',
+      where: 'Sindh', when: '727 CE · 1300s–1700s · 1647',
+      banner: 'A hill of a thousand carved tombs',
+      story: 'Makli Hill, beside the old city of Thatta, is one of the largest burial grounds in the world, built over four hundred years. Nearby stand the ruins of Banbhore, with a mosque dated 727 CE — one of the oldest in South Asia.',
+      ref: 'UNESCO World Heritage, 1981',
+      sky: ['#e8b56c', '#f6d7a0', '#fcefd4'], sun: { x: 0.74, y: 0.24, r: 0.06, c: '#fff4cf' },
+      far: { type: 'plains', c1: '#d2a868', c2: '#bd9254' },
+      lm: { name: 'makli', x: 0.5, s: 1.1 },
+      ground: { road: '#d8bd8c', line: '#f7e7bf', side: '#c9a467', side2: '#bf995b', edge: '#a8854b' },
+      props: ['tombstone', 'bush', 'pillar', 'thornbush'], weather: 'dust', wcol: '#f7e2b4',
+      obst: { low: ['rock', 'carved stones'], high: ['beam', 'stone lintel'], full: ['pillar', 'sandstone pillar'] },
+      chaser: 'A flapping cloud of pigeons', coin: 'rupee', hat: 'sindhi',
+      words: [['مسجد', 'masjid', 'mosque'], ['گنبد', 'gumbad', 'dome'], ['پتھر', 'patthar', 'stone'], ['تاریخ', 'tārīkh', 'history']],
+      item: { kind: 'stamp', title: 'The mosque of 93 domes', text: 'Thatta’s Shah Jahan Mosque (1647) has 93 domes. They carry sound so well that a voice at one end of the hall can be heard at the other.', ref: 'Thatta, Sindh' },
+      cameo: { id: 'abida', kind: 'sufi', type: 'legend', name: 'Abida Parveen', known: 'Sindh’s queen of Sufi music, born in Larkana and loved around the world.', gift: 'slow', giftText: 'A calm moment — everything slows down.' }
+    },
+    {
+      id: 'mohenjo', part: 1, name: 'Mohenjo-daro', native: 'موئن جو دڑو', tr: 'Moen-jo-daṛo',
+      where: 'Sindh, beside the Indus', when: 'About 2500 BCE',
+      banner: 'One of the first planned cities on Earth',
+      story: 'About 4,500 years ago the Indus Valley people built this city of baked bricks, with straight streets, wells, covered drains and a Great Bath. It lay buried until 1922. Brick kilns still dot the land today — and in 2026 one of them made the whole internet look up.',
+      ref: 'UNESCO World Heritage, 1980',
+      sky: ['#f0a257', '#f7d08a', '#fff1cb'], sun: { x: 0.24, y: 0.22, r: 0.06, c: '#fff2c2' },
+      far: { type: 'plains', c1: '#cf9a5a', c2: '#b88148' },
+      lm: { name: 'mohenjo', x: 0.5, s: 1.1 },
+      ground: { road: '#c98f5c', line: '#f3d3a1', side: '#b9824c', side2: '#ad7743', edge: '#96653a' },
+      props: ['brickwall', 'tyrestack', 'reed', 'kiln'], weather: 'dust', wcol: '#f6d9a8',
+      obst: { low: ['tyre', 'runaway tyre'], high: ['beam', 'brick archway'], full: ['wall', 'brick stack'] },
+      chaser: 'A runaway flying tyre', coin: 'rupee', hat: 'sindhi',
+      words: [['اینٹ', 'īnṭ', 'brick'], ['دریا', 'daryā', 'river'], ['ٹائر', 'ṭā’ir', 'tyre'], ['قدیم', 'qadīm', 'ancient']],
+      item: { kind: 'stamp', title: 'City of the Indus', text: 'Mohenjo-daro means “Mound of the Dead”. Its people used standard-sized bricks, weights and measures 4,500 years ago, and nearly every house had its own bathing place and drain.', ref: 'Larkana District, Sindh' },
+      cameo: { id: 'tyres', kind: 'tyres', type: 'internet', name: 'The Tyre Launchers', known: 'The brick-kiln crew whose 2026 clips — spinning a tyre on a diesel engine and sending it sky-high off a ramp — went around the world. Fans joked it belongs in the Olympics. (Cartoon only. Never try it!)', gift: 'fly', giftText: 'TYRE LAUNCH! Hold on tight!' }
+    },
+    {
+      id: 'derawar', part: 1, name: 'Derawar Fort', native: 'قلعہ دراوڑ', tr: 'Qilʿa Derāwaṛ',
+      where: 'Cholistan Desert, Punjab', when: 'Rebuilt 1732',
+      banner: 'Forty towers in a sea of sand',
+      story: 'Forty round towers rise straight out of the Cholistan Desert. The walls are about 30 metres high and a kilometre and a half around. The fort seen today was rebuilt in 1732 by the Nawabs of Bahawalpur.',
+      ref: 'Bahawalpur, Punjab',
+      sky: ['#ff7a5c', '#feb47b', '#ffe9c4'], sun: { x: 0.5, y: 0.34, r: 0.08, c: '#ffe7a8' },
+      far: { type: 'dunes', c1: '#e09a5c', c2: '#c77f48' },
+      lm: { name: 'derawar', x: 0.5, s: 1.15 },
+      ground: { road: '#e3bb82', line: '#fbe6ba', side: '#d79f62', side2: '#cc9356', edge: '#b57f45' },
+      props: ['cactus', 'camel', 'rock', 'tent'], weather: 'sand', wcol: '#ffd9a0',
+      obst: { low: ['sandbag', 'sand drift'], high: ['banner', 'rally banner'], full: ['jeep', 'rally jeep'] },
+      chaser: 'Roaring rally jeeps', coin: 'rupee', hat: 'turban',
+      words: [['ریت', 'ret', 'sand'], ['قلعہ', 'qilʿa', 'fort'], ['اونٹ', 'ūnṭ', 'camel'], ['صحرا', 'sehrā', 'desert']],
+      item: { kind: 'stamp', title: 'The desert rally', text: 'Every winter since 2005 the Cholistan Desert Rally races hundreds of kilometres over the dunes around Derawar Fort.', ref: 'Cholistan' },
+      cameo: { id: 'chahat', kind: 'singer', type: 'internet', name: 'Chahat Fateh Ali Khan', known: 'Lahore-born singer whose 2024 cover of the classic “Bado Badi” became one of Pakistan’s biggest memes.', gift: 'coins', giftText: 'A shower of rupees!' }
+    },
+    {
+      id: 'multan', part: 1, name: 'Multan, City of Saints', native: 'ملتان', tr: 'Multān',
+      where: 'Punjab', when: 'Tomb built 1320–1324',
+      banner: 'Blue tiles, mangoes and one of the oldest cities in South Asia',
+      story: 'People have lived in Multan for thousands of years. It is called the City of Saints for its many shrines. The great tomb of Shah Rukn-e-Alam, built in the 1320s, is crowned by one of the largest domes of its age and wrapped in blue and white tiles.',
+      ref: 'Multan, Punjab',
+      sky: ['#5fb3ee', '#b6e3ff', '#fff5d2'], sun: { x: 0.8, y: 0.16, r: 0.065, c: '#fffbe0' }, clouds: 1,
+      far: { type: 'city', c1: '#c9a37a', c2: '#b08a62' },
+      lm: { name: 'ruknealam', x: 0.5, s: 1.15 },
+      ground: { road: '#d5b98f', line: '#fbeecb', side: '#b8a06a', side2: '#ad955f', edge: '#9a8150' },
+      props: ['mangotree', 'stall', 'pot', 'lamp'], weather: 'dust', wcol: '#fff0c4',
+      obst: { low: ['pots', 'blue pottery'], high: ['banner', 'bazaar awning'], full: ['cart', 'mango cart'] },
+      chaser: 'A herd of hungry goats', coin: 'rupee',
+      words: [['آم', 'ām', 'mango'], ['مٹی', 'miṭṭī', 'clay'], ['نیلا', 'nīlā', 'blue'], ['گرمی', 'garmī', 'heat']],
+      item: { kind: 'stamp', title: 'Blue pottery & mangoes', text: 'Multan is famous for hand-painted blue pottery, sweet sohan halwa and mangoes — the national fruit of Pakistan.', ref: 'Multan' },
+      cameo: { id: 'nadeem', kind: 'javelin', type: 'legend', name: 'Arshad Nadeem', known: 'From Mian Channu, down the road from Multan. His 92.97 m javelin throw at Paris 2024 set an Olympic record and won Pakistan’s first individual Olympic gold.', gift: 'clear', giftText: 'A record throw clears the road!' }
+    },
+    {
+      id: 'lahorefort', part: 1, name: 'Lahore Fort & Shalimar', native: 'شاہی قلعہ', tr: 'Shāhī Qilʿa',
+      where: 'Lahore, Punjab', when: '1631 · 1641',
+      banner: 'A palace of mirrors and a garden of 410 fountains',
+      story: 'The Mughal emperors filled Lahore with palaces and gardens. Inside the Fort is the Sheesh Mahal, the Palace of Mirrors (1631–32), where one candle makes the ceiling sparkle like stars. The Shalimar Gardens (1641–42) step down three terraces with 410 fountains.',
+      ref: 'UNESCO World Heritage, 1981',
+      sky: ['#6fbcfb', '#c5e8ff', '#f3ffe3'], sun: { x: 0.2, y: 0.2, r: 0.055, c: '#fffbd6' }, clouds: 1,
+      far: { type: 'trees', c1: '#5fae6b', c2: '#3f8f54' },
+      lm: { name: 'fort', x: 0.5, s: 1.15 },
+      ground: { road: '#c9785a', line: '#ffe0c2', side: '#58b368', side2: '#4ca45c', edge: '#a75e44' },
+      props: ['fountain', 'cypress', 'flower', 'lamp'], weather: 'petals', wcol: '#ffc2d6',
+      obst: { low: ['pots', 'flower pots'], high: ['arch', 'garden arch'], full: ['pillar', 'marble pavilion post'] },
+      chaser: 'The garden’s proud peacocks', coin: 'rupee',
+      words: [['باغ', 'bāgh', 'garden'], ['پھول', 'phūl', 'flower'], ['شیشہ', 'shīsha', 'mirror'], ['بادشاہ', 'bādshāh', 'king']],
+      item: { kind: 'stamp', title: 'Palace of Mirrors', text: 'The Sheesh Mahal’s walls and ceiling are set with thousands of tiny mirrors. Lahore Fort and the Shalimar Gardens became a World Heritage Site in 1981.', ref: 'Lahore' },
+      cameo: { id: 'pasoori', kind: 'duo', type: 'internet', name: 'Ali Sethi & Shae Gill', known: 'Their Coke Studio song “Pasoori” (2022) was the first Pakistani song to top Spotify’s global viral chart, and the most-searched song on Google that year.', gift: 'double', giftText: 'Hit song — double rupees!' }
+    },
+    {
+      id: 'badshahi', part: 1, name: 'Badshahi Mosque', native: 'بادشاہی مسجد', tr: 'Bādshāhī Masjid',
+      where: 'Lahore, Punjab', when: 'Completed 1673',
+      banner: 'The largest mosque in the world for 313 years',
+      story: 'Built of red sandstone with three white marble domes, the Badshahi Mosque was finished in 1673. Its courtyard can hold about 100,000 worshippers, and from 1673 to 1986 no mosque on Earth was larger. Beside its gate rests Allama Iqbal, the poet who dreamed of Pakistan.',
+      ref: 'Lahore',
+      sky: ['#2f3268', '#c0456a', '#f8c291'], stars: 1,
+      far: { type: 'city', c1: '#5a2f55', c2: '#462345' },
+      lm: { name: 'badshahi', x: 0.5, s: 1.2 },
+      ground: { road: '#b5563f', line: '#ffd9bd', side: '#7a4a52', side2: '#6f4249', edge: '#8e3f2f' },
+      props: ['lamp', 'cypress', 'arch', 'lamp'], weather: 'birds', wcol: '#f3e6e6',
+      obst: { low: ['basket', 'rose-petal baskets'], high: ['arch', 'sandstone arch'], full: ['pillar', 'sandstone pillar'] },
+      chaser: 'A swirl of courtyard pigeons', coin: 'rupee',
+      words: [['مینار', 'mīnār', 'minaret'], ['نماز', 'namāz', 'prayer'], ['امن', 'amn', 'peace'], ['شاعر', 'shāʿir', 'poet']],
+      item: { kind: 'stamp', title: 'The poet of the East', text: 'Allama Muhammad Iqbal (1877–1938) is Pakistan’s national poet. In 1930 he spoke of a homeland in the north-west of the subcontinent. He is buried beside the Badshahi Mosque.', ref: 'Hazuri Bagh, Lahore' },
+      cameo: null, quiet: 'A place of prayer — no cameo here. Run quietly.'
+    },
+    {
+      id: 'foodstreet', part: 1, name: 'Lahore Food Street', native: 'فوڈ سٹریٹ', tr: 'Food Street',
+      where: 'Lahore, Punjab', when: 'Tonight!',
+      banner: '“Whoever has not seen Lahore has not been born”',
+      story: 'Lahore is the food capital of Pakistan. On Fort Road, old wooden-balconied houses glow with lights while cooks serve nihari, halwa puri, lassi and sizzling kebabs — all in view of the Badshahi Mosque. In 2019 UNESCO also named Lahore a City of Literature.',
+      ref: 'Fort Road, Lahore',
+      sky: ['#0a0f2e', '#32205f', '#7b3f61'], stars: 2, moon: { x: 0.82, y: 0.14, r: 0.04 },
+      far: { type: 'city', c1: '#2a1c4a', c2: '#1d1336', lit: 1 },
+      lm: { name: 'foodstreet', x: 0.5, s: 1.15 },
+      ground: { road: '#6b4a4a', line: '#ffcf7a', side: '#4a2f45', side2: '#41283c', edge: '#523636' },
+      props: ['stall', 'lamp', 'pot', 'stall'], weather: 'lights', wcol: '#ffcf7a',
+      obst: { low: ['pots', 'karahi pots'], high: ['wire', 'fairy lights'], full: ['stall', 'samosa stall'] },
+      chaser: 'Hungry cats after your samosa', coin: 'samosa',
+      words: [['سموسہ', 'samosa', 'samosa'], ['چائے', 'chāe', 'tea'], ['روٹی', 'roṭī', 'bread'], ['بریانی', 'biryānī', 'biryani']],
+      item: { kind: 'stamp', title: 'Food capital', text: 'A Lahori breakfast is halwa puri with chickpeas, washed down with sweet lassi. The old saying goes: “Whoever has not seen Lahore has not been born.”', ref: 'Lahore' },
+      cameo: { id: 'greedy', kind: 'greedy', type: 'internet', name: 'Mr Greedy', known: 'Star of the “Funny Game” eating-challenge videos, famous for his samosa showdowns and friendly rivalry with Muzamil.', gift: 'feast', giftText: 'SAMOSA FEAST! Grab them all!' }
+    },
+    {
+      id: 'minar', part: 1, name: 'Minar-e-Pakistan', native: 'مینار پاکستان', tr: 'Mīnār-e-Pākistān',
+      where: 'Lahore, Punjab', when: '23 March 1940',
+      banner: 'Where a nation asked for a home',
+      story: 'On 23 March 1940, in this park, the Lahore Resolution asked for a homeland — remembered every year as Pakistan Day. The white tower built on the spot (1960–1968) is about 70 metres tall and opens like a flower. Seven years after the resolution, on 14 August 1947, Pakistan was born.',
+      ref: 'Iqbal Park, Lahore',
+      sky: ['#3f9fe0', '#aee1ff', '#f0fff0'], sun: { x: 0.8, y: 0.18, r: 0.055, c: '#fffbe0' }, clouds: 1,
+      far: { type: 'trees', c1: '#4fa862', c2: '#35884b' },
+      lm: { name: 'minar', x: 0.5, s: 0.95 },
+      ground: { road: '#e9e4d8', line: '#1e7a46', side: '#3fa55b', side2: '#36974f', edge: '#c9c2b0' },
+      props: ['flag', 'lamp', 'tree', 'flag'], weather: 'confetti', wcol: '#1e8449',
+      obst: { low: ['crate', 'flag boxes'], high: ['banner', 'bunting'], full: ['pillar', 'marble post'] },
+      chaser: 'A tangle of runaway kites', coin: 'rupee',
+      words: [['پاکستان', 'Pākistān', 'Pakistan'], ['پرچم', 'parcham', 'flag'], ['قوم', 'qaum', 'nation'], ['خواب', 'khwāb', 'dream']],
+      item: { kind: 'stamp', title: 'Land of the Pure', text: 'The name “Pakistan” was coined in 1933 and means “Land of the Pure”. On the flag, green stands for the Muslim majority, the white stripe for religious minorities, the crescent for progress and the star for light.', ref: 'Pakistan Day, 23 March' },
+      cameo: { id: 'momin', kind: 'flagfan', type: 'internet', name: 'Momin Saqib', known: 'The superfan whose heartbroken “Maaro mujhe maaro!” after a 2019 World Cup match became a legendary meme. He is now a TV host and actor.', gift: 'double', giftText: 'Fan power — double rupees!' }
+    },
+    {
+      id: 'cricket', part: 1, name: 'Gaddafi Stadium', native: 'قذافی سٹیڈیم', tr: 'Qazzāfī Stadium',
+      where: 'Lahore, Punjab', when: '25 March 1992',
+      banner: 'The night Pakistan won the World Cup',
+      story: 'On 25 March 1992, under captain Imran Khan, Pakistan beat England in Melbourne to win the Cricket World Cup. Pakistan also won the T20 World Cup in 2009 and the Champions Trophy in 2017. Lahore’s Gaddafi Stadium, opened in 1959, hosted the 1996 World Cup final.',
+      ref: 'Lahore',
+      sky: ['#081737', '#1f3f7a', '#4f86c6'], stars: 1,
+      far: { type: 'stadium', c1: '#24406e', c2: '#16294a' },
+      lm: { name: 'scoreboard', x: 0.5, s: 1.05 },
+      ground: { road: '#d6c08e', line: '#ffffff', side: '#2f9a55', side2: '#278a4a', edge: '#b8a271' },
+      props: ['flag', 'wicket', 'lamp', 'wicket'], weather: 'confetti', wcol: '#ffffff',
+      obst: { low: ['crate', 'kit bags'], high: ['banner', 'boundary banner'], full: ['roller', 'pitch roller'] },
+      chaser: 'A storm of cricket balls', coin: 'ball', outfit: 'cricket',
+      words: [['کرکٹ', 'krikeṭ', 'cricket'], ['گیند', 'gend', 'ball'], ['بلا', 'ballā', 'bat'], ['جیت', 'jīt', 'victory']],
+      item: { kind: 'stamp', title: 'Champions', text: 'Cricket World Cup 1992, T20 World Cup 2009, Champions Trophy 2017. Pakistan’s national sport is field hockey: three Olympic golds and a record four World Cups.', ref: 'Sport' },
+      cameo: { id: 'sarim', kind: 'cricketfan', type: 'internet', name: 'Sarim Akhtar', known: 'The “Disappointed Fan”. His hands-on-hips stare after a dropped catch at the 2019 World Cup became a worldwide meme and hangs in Hong Kong’s meme museum.', gift: 'shield', giftText: 'No disappointment today — shield up!' }
+    },
+    {
+      id: 'sialkot', part: 1, name: 'Sialkot', native: 'سیالکوٹ', tr: 'Siyālkoṭ',
+      where: 'Punjab', when: '9 November 1877',
+      banner: 'The city that stitches the world’s footballs',
+      story: 'Allama Iqbal was born in Sialkot on 9 November 1877. Today the city’s workshops make millions of footballs a year — including the official match balls of the 2014, 2018 and 2022 World Cups — along with cricket bats and hockey sticks.',
+      ref: 'Sialkot, Punjab',
+      sky: ['#83cbea', '#d4f1ff', '#fffbe0'], sun: { x: 0.24, y: 0.18, r: 0.055, c: '#fffbd0' }, clouds: 2,
+      far: { type: 'plains', c1: '#b9cf6a', c2: '#9bb654' },
+      lm: { name: 'village', x: 0.5, s: 1.1 },
+      ground: { road: '#b48b5e', line: '#f1dcb4', side: '#d7c35a', side2: '#cbb64e', edge: '#96704a' },
+      props: ['wheat', 'tree', 'hut', 'football'], weather: 'none', wcol: '#ffffff',
+      obst: { low: ['ball', 'pile of footballs'], high: ['rope', 'washing line'], full: ['cart', 'ox cart'] },
+      chaser: 'Bouncing footballs', coin: 'ball',
+      words: [['کھیل', 'khel', 'game'], ['گاؤں', 'gāoṉ', 'village'], ['کتاب', 'kitāb', 'book'], ['ہاتھ', 'hāth', 'hand']],
+      item: { kind: 'stamp', title: 'World Cup footballs', text: 'The official balls for the 2014, 2018 and 2022 FIFA World Cups were made in Sialkot. For over a century the city has been famous for hand-stitched sports gear.', ref: 'Sialkot' },
+      cameo: { id: 'mubashir', kind: 'chef', type: 'internet', name: 'Mubashir Saddique', known: 'Creator of “Village Food Secrets”. He once worked in a Sialkot football factory and now cooks village recipes in clay pots for millions of viewers.', gift: 'heart', giftText: 'A home-cooked meal — heart restored!' }
+    },
+    {
+      id: 'rohtas', part: 1, name: 'Rohtas Fort & the Grand Trunk Road', native: 'قلعہ روہتاس', tr: 'Qilʿa Rohtās',
+      where: 'Near Jhelum, Punjab', when: 'Begun 1541',
+      banner: 'Four kilometres of wall, twelve gates, never stormed',
+      story: 'Sher Shah Suri began this giant fort in 1541. Its walls run for more than four kilometres with 68 towers and 12 gates, and it was never taken by force. He also rebuilt the Grand Trunk Road, one of Asia’s oldest highways — today ruled by painted, jingling trucks.',
+      ref: 'UNESCO World Heritage, 1997',
+      sky: ['#f4ad66', '#ffd9a0', '#fff2d8'], sun: { x: 0.76, y: 0.22, r: 0.06, c: '#fff3c4' },
+      far: { type: 'hills', c1: '#c9a36b', c2: '#ab8551' },
+      lm: { name: 'rohtas', x: 0.5, s: 1.2 },
+      ground: { road: '#55585f', line: '#ffd866', side: '#b89a5e', side2: '#ad8f53', edge: '#3c3f45' },
+      props: ['truck', 'rock', 'tree', 'banner'], weather: 'dust', wcol: '#ffe6b8',
+      obst: { low: ['sandbag', 'sacks of grain'], high: ['beam', 'fort gate beam'], full: ['truck', 'jingle truck'] },
+      chaser: 'A honking jingle truck', coin: 'rupee', minigame: 'arm',
+      words: [['طاقت', 'tāqat', 'strength'], ['بازو', 'bāzū', 'arm'], ['دروازہ', 'darwāza', 'gate'], ['ٹرک', 'ṭrak', 'truck']],
+      item: { kind: 'stamp', title: 'Truck art', text: 'Pakistan’s trucks are rolling works of art: every panel is hand-painted with flowers, birds, poetry and mountains, and chains along the bumper jingle as they drive.', ref: 'Grand Trunk Road' },
+      cameo: { id: 'arm', kind: 'arm', type: 'internet', name: 'The Arm Wrestlers', known: 'Arm-wrestling duels pack out village fairs and fill Pakistani reels — elbows down, eyes locked, the whole crowd shouting.', gift: 'arm', giftText: 'ARM WRESTLE! Tap as fast as you can!' }
+    },
+    {
+      id: 'khewra', part: 1, name: 'Khewra Salt Mine', native: 'کھیوڑہ', tr: 'Khewṛa',
+      where: 'Salt Range, Punjab', when: 'Legend: 326 BCE',
+      banner: 'A glowing pink world under the hills',
+      story: 'Khewra is the second-largest salt mine in the world. Legend says its salt was found in 326 BCE when the horses of Alexander’s army began licking the rocks. Deep inside are tunnels about 40 kilometres long and a small mosque built from glowing salt bricks.',
+      ref: 'Jhelum District, Punjab',
+      sky: ['#190a1d', '#4a1838', '#a8456b'],
+      far: { type: 'cave', c1: '#3a1230', c2: '#260a20' },
+      lm: { name: 'saltmine', x: 0.5, s: 1.1 },
+      ground: { road: '#c9849f', line: '#ffd9e6', side: '#7c3458', side2: '#6f2c4d', edge: '#a25f7c' },
+      props: ['crystal', 'lamp', 'cart', 'crystal'], weather: 'sparkle', wcol: '#ffd0e4',
+      obst: { low: ['rock', 'salt blocks'], high: ['beam', 'mine timber'], full: ['cart', 'mine cart'] },
+      chaser: 'A rolling salt boulder', coin: 'crystal',
+      words: [['نمک', 'namak', 'salt'], ['گلابی', 'gulābī', 'pink'], ['کان', 'kān', 'mine'], ['گھوڑا', 'ghoṛā', 'horse']],
+      item: { kind: 'stamp', title: 'Pink salt', text: 'The pink “Himalayan” salt sold all over the world is dug here in Pakistan’s Salt Range. Inside the mine, miners built a mosque and a tiny Minar-e-Pakistan out of salt bricks that glow when lit.', ref: 'Khewra' },
+      cameo: { id: 'horse', kind: 'horse', type: 'mascot', name: 'The Salt-Licking Horse', known: 'A horse of legend: the story goes that army horses licking the rocks here in 326 BCE revealed the salt.', gift: 'magnet', giftText: 'Salty luck — coin magnet!' }
+    },
+    {
+      id: 'islamabad', part: 1, name: 'Islamabad', native: 'اسلام آباد', tr: 'Islāmābād',
+      where: 'Capital Territory', when: 'Capital since 1967 · Mosque 1986',
+      banner: 'A green capital under the Margalla Hills',
+      story: 'Islamabad was built in the 1960s as Pakistan’s new capital. The Faisal Mosque (1986), shaped like a desert tent with four minarets about 90 metres tall, was designed by Turkish architect Vedat Dalokay. From 1986 to 1993 it was the largest mosque in the world.',
+      ref: 'Islamabad',
+      sky: ['#58a9e0', '#aed6f1', '#eafaf1'], sun: { x: 0.18, y: 0.2, r: 0.055, c: '#fffbe0' }, clouds: 2,
+      far: { type: 'hills', c1: '#5fa96a', c2: '#3f8a50' },
+      lm: { name: 'faisal', x: 0.5, s: 1.05 },
+      ground: { road: '#5b5f66', line: '#ffffff', side: '#46a35a', side2: '#3c954f', edge: '#3f4349' },
+      props: ['pine', 'lamp', 'flower', 'flag'], weather: 'none', wcol: '#ffffff',
+      obst: { low: ['crate', 'tea crates'], high: ['banner', 'road sign'], full: ['stall', 'chai stall'] },
+      chaser: 'The cheeky Margalla monkeys', coin: 'rupee',
+      words: [['دوست', 'dost', 'friend'], ['سبز', 'sabz', 'green'], ['پہاڑ', 'pahāṛ', 'mountain'], ['ستارہ', 'sitāra', 'star']],
+      item: { kind: 'stamp', title: 'The tent of marble', text: 'The Faisal Mosque has no dome. Its eight-sided hall is shaped like a Bedouin tent, and the four slim minarets stand like tent poles at its corners.', ref: 'Islamabad' },
+      cameo: { id: 'chaiwala', kind: 'chai', type: 'internet', name: 'Arshad Khan, the Chaiwala', known: 'A tea-seller at Islamabad’s Sunday Bazaar whose photo went viral in October 2016. He became a model and later opened his own cafés.', gift: 'heart', giftText: 'A hot cup of chai — heart restored!' }
+    },
+    {
+      id: 'nathiagali', part: 1, name: 'Nathia Gali', native: 'نتھیا گلی', tr: 'Nathiyā Galī',
+      where: 'Galyat hills, Khyber Pakhtunkhwa', when: 'February 2021',
+      banner: 'Pine forests in the clouds',
+      story: 'North of Islamabad the road climbs into the Galyat, a chain of cool hill towns about 2,400 metres up. Nathia Gali sits among pine, oak and maple inside Ayubia National Park, home to monkeys and leopards.',
+      ref: 'Abbottabad District',
+      sky: ['#8aa6b6', '#c9d6dc', '#eef3f1'], clouds: 3,
+      far: { type: 'trees', c1: '#4f7f63', c2: '#35634a' },
+      lm: { name: 'chairlift', x: 0.5, s: 1.1 },
+      ground: { road: '#5d6066', line: '#e9e9e9', side: '#4f8a5b', side2: '#457d51', edge: '#3f4247' },
+      props: ['pine', 'pine', 'rock', 'monkey'], weather: 'rain', wcol: '#dfeaf2',
+      obst: { low: ['log', 'fallen pine log'], high: ['branch', 'pine branch'], full: ['boulder', 'mossy rock'] },
+      chaser: 'Cheeky hill monkeys', coin: 'rupee',
+      words: [['بادل', 'bādal', 'cloud'], ['بارش', 'bārish', 'rain'], ['جنگل', 'jangal', 'forest'], ['بندر', 'bandar', 'monkey']],
+      item: { kind: 'stamp', title: 'Ayubia National Park', text: 'Ayubia National Park was created in 1984 to protect the moist pine forests of the Galyat. Its famous chairlift first carried families over the treetops in the 1960s.', ref: 'Galyat' },
+      cameo: { id: 'dananeer', kind: 'pawri', type: 'internet', name: 'Dananeer Mobeen', known: 'Her five-second “Pawri ho rahi hai” clip, filmed in Nathia Gali in February 2021, set the whole subcontinent laughing. She is now an actress.', gift: 'double', giftText: 'Pawri time — double rupees!' }
+    },
+    {
+      id: 'taxila', part: 1, name: 'Taxila', native: 'ٹیکسلا', tr: 'Ṭeksilā',
+      where: 'Rawalpindi District, Punjab', when: 'About 500 BCE – 500 CE',
+      banner: 'A city of learning for a thousand years',
+      story: 'For about a thousand years Taxila was a great city of the Gandhara region, where trade roads met and students came from far lands to study. Its Buddhist stupas and monasteries, like Dharmarajika and Jaulian, still stand among the hills.',
+      ref: 'UNESCO World Heritage, 1980',
+      sky: ['#eebf76', '#f8e1a8', '#fff6dc'], sun: { x: 0.78, y: 0.2, r: 0.06, c: '#fff6cf' }, clouds: 1,
+      far: { type: 'hills', c1: '#b7a86a', c2: '#978a52' },
+      lm: { name: 'stupa', x: 0.5, s: 1.15 },
+      ground: { road: '#c9ae82', line: '#f6e6c0', side: '#9fae62', side2: '#93a157', edge: '#a98d60' },
+      props: ['ruin', 'tree', 'pillar', 'rock'], weather: 'dust', wcol: '#fff0c8',
+      obst: { low: ['rock', 'carved stones'], high: ['beam', 'monastery lintel'], full: ['pillar', 'stone column'] },
+      chaser: 'A puffing steam train', coin: 'coin',
+      words: [['سبق', 'sabaq', 'lesson'], ['استاد', 'ustād', 'teacher'], ['سکہ', 'sikka', 'coin'], ['ریل', 'rel', 'train']],
+      item: { kind: 'stamp', title: 'Gandhara', text: 'Taxila’s museum holds thousands of Gandhara sculptures and coins. Three empires — Persian, Greek and Mauryan — left their mark here.', ref: 'Taxila' },
+      cameo: { id: 'shoaib', kind: 'bowler', type: 'legend', name: 'Shoaib Akhtar', known: 'The “Rawalpindi Express”. In 2003 he bowled the fastest ball ever recorded in cricket: 161.3 km/h.', gift: 'dash', giftText: 'RAWALPINDI EXPRESS! Full speed!' }
+    },
+    {
+      id: 'khyber', part: 1, name: 'Peshawar & the Khyber Pass', native: 'درہ خیبر', tr: 'Darra-e-Khaibar',
+      where: 'Khyber Pakhtunkhwa', when: 'Thousands of years',
+      banner: 'The gateway between Central and South Asia',
+      story: 'For thousands of years traders, pilgrims and armies have squeezed through the Khyber Pass. At its foot lies Peshawar, one of the oldest living cities in South Asia, whose Qissa Khwani Bazaar — the Storytellers’ Bazaar — once rang with travellers’ tales over cups of green tea.',
+      ref: 'Khyber Pakhtunkhwa',
+      sky: ['#d7884a', '#f2c48d', '#fbe6c4'], sun: { x: 0.5, y: 0.2, r: 0.06, c: '#fff2c4' },
+      far: { type: 'mountains', c1: '#a8774f', c2: '#865b3b' },
+      lm: { name: 'khybergate', x: 0.5, s: 1.2 },
+      ground: { road: '#5a5d63', line: '#ffd866', side: '#b08a5a', side2: '#a47e4f', edge: '#3e4146' },
+      props: ['truck', 'rock', 'stall', 'camel'], weather: 'dust', wcol: '#ffe2b0',
+      obst: { low: ['sandbag', 'carpet rolls'], high: ['banner', 'bazaar awning'], full: ['truck', 'jingle truck'] },
+      chaser: 'A camel caravan in a hurry', coin: 'rupee', hat: 'pakol',
+      words: [['درہ', 'darra', 'mountain pass'], ['قہوہ', 'qehwa', 'green tea'], ['بازار', 'bāzār', 'market'], ['مہمان', 'mehmān', 'guest']],
+      item: { kind: 'stamp', title: 'Bab-e-Khyber', text: 'The stone gate of Bab-e-Khyber, built in the 1960s at Jamrud, marks the start of the pass. Pashtun hospitality is famous: a guest is always offered tea first.', ref: 'Jamrud' },
+      cameo: { id: 'jahangir', kind: 'squash', type: 'legend', name: 'Jahangir Khan', known: 'Squash legend from a Peshawar family of champions. From 1981 to 1986 he went 555 matches without losing.', gift: 'shield', giftText: 'Unbeatable — shield up!' }
+    },
+    {
+      id: 'hunza', part: 1, name: 'The Karakoram Highway & Hunza', native: 'شاہراہ قراقرم', tr: 'Shāhrāh-e-Qarāqaram',
+      where: 'Gilgit-Baltistan', when: 'Opened 1979',
+      banner: 'One of the highest paved roads on Earth',
+      story: 'Pakistan and China spent about twenty years blasting the Karakoram Highway through the mountains. It climbs to the Khunjerab Pass at 4,693 metres. Along the way lies Hunza, with its 700-year-old Baltit Fort, apricot orchards and turquoise Attabad Lake, formed by a landslide in 2010.',
+      ref: 'Gilgit-Baltistan',
+      sky: ['#2a82dc', '#74b9ff', '#dff9fb'], sun: { x: 0.2, y: 0.16, r: 0.05, c: '#ffffff' }, clouds: 1,
+      far: { type: 'peaks', c1: '#8395a7', c2: '#576574' },
+      lm: { name: 'baltit', x: 0.5, s: 1.1 },
+      ground: { road: '#50545b', line: '#ffffff', side: '#7fae6a', side2: '#73a15f', edge: '#383b41' },
+      props: ['apricot', 'rock', 'poplar', 'apricot'], weather: 'petals', wcol: '#ffd3e2',
+      obst: { low: ['rock', 'fallen rocks'], high: ['rope', 'rope bridge'], full: ['yak', 'stubborn yak'] },
+      chaser: 'A stampede of yaks', coin: 'rupee', hat: 'pakol',
+      words: [['سڑک', 'saṛak', 'road'], ['خوبانی', 'khūbānī', 'apricot'], ['جھیل', 'jhīl', 'lake'], ['پل', 'pul', 'bridge']],
+      item: { kind: 'stamp', title: 'The eighth wonder', text: 'The Karakoram Highway is sometimes called the Eighth Wonder of the World. The Khunjerab Pass (4,693 m) on the China border is among the highest paved border crossings on Earth.', ref: 'Karakoram' },
+      cameo: { id: 'zenith', kind: 'biker', type: 'internet', name: 'Zenith Irfan', known: 'In 2015 she rode a motorcycle solo from Lahore to the Khunjerab Pass — the first Pakistani woman to do it. The 2018 film “Motorcycle Girl” tells her story.', gift: 'dash', giftText: 'Full throttle — dash!' }
+    },
+    {
+      id: 'k2', part: 1, name: 'K2, the Roof of the World', native: 'کے ٹو', tr: 'K-Two',
+      where: 'Karakoram, Gilgit-Baltistan', when: '31 July 1954',
+      banner: '8,611 metres: the second-highest mountain on Earth',
+      story: 'K2 stands 8,611 metres high, so steep and wild that climbers call it the Savage Mountain. It was first climbed on 31 July 1954, and not climbed in winter until 2021. Five of the world’s fourteen peaks above 8,000 metres are in Pakistan.',
+      ref: 'Gilgit-Baltistan',
+      sky: ['#0b2260', '#4a69bd', '#c7ecee'], stars: 1, sun: { x: 0.84, y: 0.16, r: 0.04, c: '#ffffff' },
+      far: { type: 'peaks', c1: '#a4b0be', c2: '#747d8c' },
+      lm: { name: 'k2', x: 0.5, s: 0.92 },
+      ground: { road: '#e9f1f7', line: '#9fb6c9', side: '#cfdde8', side2: '#c2d2de', edge: '#aebfcc' },
+      props: ['snowrock', 'flag', 'tent', 'snowrock'], weather: 'snow', wcol: '#ffffff',
+      obst: { low: ['snow', 'snow drift'], high: ['rope', 'climbing rope'], full: ['boulder', 'ice block'] },
+      chaser: 'A rumbling avalanche', coin: 'silver', outfit: 'climber',
+      words: [['برف', 'barf', 'snow'], ['چوٹی', 'choṭī', 'peak'], ['آسمان', 'āsmān', 'sky'], ['ہمت', 'himmat', 'courage']],
+      item: { kind: 'stamp', title: 'Five giants', text: 'K2, Nanga Parbat, Gasherbrum I, Broad Peak and Gasherbrum II: five of the fourteen highest mountains on Earth stand in Pakistan.', ref: 'Karakoram & Himalaya' },
+      cameo: { id: 'samina', kind: 'climber', type: 'legend', name: 'Samina Baig', known: 'From Shimshal in Hunza. The first Pakistani woman to climb Mount Everest (2013) and K2 (2022).', gift: 'shield', giftText: 'Summit spirit — shield up!' }
+    }
+  ];
+
+  /* ───────────────────────── SETS TO COLLECT ───────────────────────── */
+  var PILLARS = [
+    ['الشهادة', 'Shahādah', 'The declaration of faith'],
+    ['الصلاة', 'Ṣalāh', 'Prayer, five times a day'],
+    ['الزكاة', 'Zakāh', 'Giving a share to those in need'],
+    ['الصوم', 'Ṣawm', 'Fasting in Ramadan'],
+    ['الحج', 'Ḥajj', 'The pilgrimage to Makkah']
+  ];
+
+  /* ───────────────────────── POWER-UPS ───────────────────────── */
+  var POWERUPS = {
+    shield: { name: ['Crescent shield', 'Crescent shield'], secs: 0, color: '#7fe3c4', text: 'Blocks one bump' },
+    fly: { name: ['Flying carpet', 'Tyre launch'], secs: 6, color: '#c58bff', text: 'Soar over everything' },
+    magnet: { name: ['Magnet', 'Magnet'], secs: 8, color: '#ff6b6b', text: 'Pulls coins to you' },
+    double: { name: ['2× dinars', '2× rupees'], secs: 10, color: '#ffd24a', text: 'Every coin counts twice' },
+    slow: { name: ['Sakinah (calm)', 'Chai break'], secs: 5, color: '#8fd3ff', text: 'Everything slows down' },
+    dash: { name: ['Desert wind', 'Express dash'], secs: 3.5, color: '#ff9f43', text: 'Smash through anything' }
+  };
+
+  /* ───────────────────────── SHOP ───────────────────────── */
+  var SHOP = {
+    upgrades: [
+      { id: 'power', name: 'Longer power-ups', text: '+20% time per level', costs: [150, 400, 900] },
+      { id: 'magnet', name: 'Stronger magnet', text: 'Pulls coins from further away', costs: [120, 350, 800] },
+      { id: 'heart', name: 'Extra heart', text: 'Start every scene with one more heart', costs: [300, 900] },
+      { id: 'value', name: 'Richer coins', text: '+1 for every coin you pick up', costs: [500, 1500] }
+    ],
+    robes: [
+      { name: 'Sand', c: '#e8d5a8', cost: 0 }, { name: 'Sky', c: '#7fb8e6', cost: 100 },
+      { name: 'Olive', c: '#8aa05a', cost: 100 }, { name: 'Rose', c: '#e58aa0', cost: 150 },
+      { name: 'Indigo', c: '#5a5fb8', cost: 150 }, { name: 'Saffron', c: '#f0a83a', cost: 200 },
+      { name: 'Pakistan green', c: '#1e8449', cost: 250 }, { name: 'Royal gold', c: '#d4af37', cost: 400 }
+    ],
+    caps: [
+      { id: 'kufi', name: 'White kufi', cost: 0 }, { id: 'crescent', name: 'Crescent cap', cost: 150 },
+      { id: 'turban', name: 'Turban', cost: 200 }, { id: 'sindhi', name: 'Sindhi topi', cost: 250 },
+      { id: 'pakol', name: 'Pakol', cost: 250 }, { id: 'jinnah', name: 'Jinnah cap', cost: 300 }
+    ]
+  };
+
+  /* ───────────────────────── BADGES ───────────────────────── */
+  var BADGES = [
+    { id: 'word1', name: 'First word', text: 'Spell your first word' },
+    { id: 'word25', name: 'Word collector', text: 'Spell 25 different words' },
+    { id: 'word120', name: 'Master of letters', text: 'Spell all 120 words' },
+    { id: 'wisdom10', name: 'Ten Wisdoms', text: 'Find all ten Wisdom scrolls' },
+    { id: 'stamp20', name: 'Historian', text: 'Find all twenty History stamps' },
+    { id: 'cameo19', name: 'Guest list', text: 'Meet every cameo guest' },
+    { id: 'tyre', name: 'Tyre pilot', text: 'Get launched by the Tyre Launchers' },
+    { id: 'arm', name: 'Arm of iron', text: 'Win an arm-wrestling duel' },
+    { id: 'feast', name: 'Samosa champion', text: 'Catch 40 samosas in one feast' },
+    { id: 'pillars', name: 'Five Pillars', text: 'Finish Part 1 · The Stories' },
+    { id: 'summit', name: 'Roof of the world', text: 'Reach the top of K2' },
+    { id: 'flawless', name: 'Sure-footed', text: 'Finish a scene without a single bump' }
+  ];
+
+  /* ───────────────────────── LOADING-SCREEN FACTS ───────────────────────── */
+  var FACTS = [
+    'The Quran has 114 surahs (chapters), arranged in 30 parts.',
+    'The first word of the Quran to be revealed was “Iqra” — “Read!”',
+    'The longest surah, al-Baqarah, has 286 verses. The shortest, al-Kawthar, has just 3.',
+    'The Quran was revealed over about 23 years.',
+    'Twenty-five prophets are mentioned by name in the Quran.',
+    'Surah 12 tells the whole story of Yusuf and calls it “the best of stories”.',
+    'Maryam is the only woman called by her name in the Quran, and Surah 19 is named after her.',
+    'Several surahs are named after animals: the Cow, the Bee, the Ant, the Spider and the Elephant.',
+    'Arabic has 28 letters and is written from right to left.',
+    'Most Arabic letters change shape depending on where they sit in a word.',
+    'Urdu is written in the same script as Arabic, with extra letters such as پ ٹ چ ڈ ڑ گ.',
+    'Pakistan means “Land of the Pure”.',
+    'Pakistan’s national animal is the markhor, a wild goat with corkscrew horns.',
+    'The national bird is the chukar partridge and the national flower is jasmine.',
+    'The national tree is the deodar cedar; the national fruit is the mango.',
+    'Pakistan’s national anthem takes exactly 80 seconds to play.',
+    'The Indus River runs about 3,180 km from the mountains to the Arabian Sea.',
+    'The Indus river dolphin is nearly blind and finds its way by sound.',
+    'Tarbela Dam on the Indus is one of the largest earth-filled dams in the world.',
+    'Pakistan has six UNESCO World Heritage Sites, including Mohenjo-daro, Taxila and Rohtas Fort.',
+    'The world’s highest polo ground is at Shandur in northern Pakistan, about 3,700 m up.',
+    'The Deosai plateau, over 4,000 m high, is home to Himalayan brown bears.',
+    'Two Pakistanis have won Nobel Prizes: Abdus Salam (Physics, 1979) and Malala Yousafzai (Peace, 2014).',
+    'Arfa Karim of Pakistan became a Microsoft Certified Professional in 2004, aged nine.',
+    'Jahangir Khan won 555 squash matches in a row.',
+    'Urdu is Pakistan’s national language; dozens of other languages are spoken too, including Punjabi, Sindhi, Pashto and Balochi.'
+  ];
+
+  /* ───────────────────────── ON-SCREEN TEXT ───────────────────────── */
+  var STR = {
+    title: 'Quran Runner', subtitle: 'Pakistan Journey',
+    tagline: 'From the First Garden to the roof of the world',
+    blurb: '30 scenes · about 30 minutes · 120 words in Arabic and Urdu',
+    newGame: 'Start the journey', cont: 'Continue', jumpPk: 'Start at Part 2 · Pakistan',
+    scenes: 'Scenes', album: 'Album', shop: 'Shop', howto: 'How to play',
+    howtoText: [
+      'Swipe or press ← → to change lane.',
+      'Swipe up or press ↑ / Space to jump low things.',
+      'Swipe down or press ↓ to slide under high things.',
+      'Catch the letters in order to spell each word.',
+      'Find the hidden scroll or stamp in every scene.',
+      'Three bumps and you restart the scene — your coins are safe.'
+    ],
+    run: 'Tap or press Enter to run', next: 'Next scene', retry: 'Try this scene again',
+    resume: 'Resume', quit: 'Back to title', paused: 'Paused',
+    sceneDone: 'Scene complete!', failTitle: 'Caught!', failText: 'Catch your breath and try the scene again. Your coins and words are safe.',
+    part1Done: 'Part 1 complete', part1Text: 'You have crossed all ten stories and reached the Kaaba. Now the sea road leads east — to Pakistan.',
+    endTitle: 'You reached the roof of the world!',
+    endText: 'From the First Garden to the summit of K2: thirty scenes, ten wisdoms and 4,500 years of history. Shābāsh!',
+    armTitle: 'Arm wrestle!', armHint: 'Tap, click or press Space as fast as you can!',
+    armWin: 'You win! +150', armLose: 'So close! The crowd still cheers.',
+    credits: 'A fan-made learning game. Cameo guests are friendly tributes to public figures, drawn as cartoons; nobody named here made or endorsed this game.'
+  };
+
+  QR.DATA = {
+    letters: LETTERS, alphabet: ALPHABET, numerals: NUMERALS,
+    parts: PARTS, scenes: SCENES, pillars: PILLARS,
+    powerups: POWERUPS, shop: SHOP, badges: BADGES, facts: FACTS, str: STR,
+    sceneSeconds: 60
+  };
+
+  // Lets tools/check-data.js load this file under Node.
+  if (typeof module !== 'undefined' && module.exports) module.exports = QR.DATA;
+})();
