@@ -1,0 +1,676 @@
+<script>
+/* Pakistan Runner — game.js
+ * The engine: running, jumping, rolling, riding along roofs, spawning,
+ * collisions, screens and saving. Content comes from QR.DATA (data.js) and
+ * the 3D world is drawn by QR.World (world.js).
+ */
+(function () {
+  'use strict';
+  var QR = window.QR, D = QR.DATA, Au = QR.Audio, Wd = QR.World, S = D.str;
+  var $ = function (id) { return document.getElementById(id); };
+  var cv = $('game');
+  var LANE = Wd.LANE, RIDE_H = Wd.RIDE_H, RAMP = Wd.RAMP;
+  var SPAWN_Z = 135, GRAV = 32, JUMP_V = 11.2, SUPER_V = 16, ROLL_T = 0.68, FLY_Y = 7.2, BACK_Z = -14;
+  var qs = new URLSearchParams(location.search);
+  var SECS = Math.max(5, +qs.get('secs') || D.sceneSeconds);
+  var N = D.scenes.length;
+  function guests(sc) { return [sc.cameo, sc.cameo2].filter(Boolean); }
+  var TOTAL_WORDS = D.scenes.reduce(function (n, s) { return n + s.words.length; }, 0);
+  var TOTAL_CAMEOS = D.scenes.reduce(function (n, s) { return n + guests(s).length; }, 0);
+  var RIDE_NAME = { train: 'a train', bus: 'a bus', truck: 'a truck', wagon: 'a wagon', wall: 'a wall', hedge: 'a hedge' };
+  var POW_KINDS = ['shield', 'magnet', 'double', 'jump', 'slow', 'dash', 'fly', 'magnet', 'jump'];
+
+  /* ───────────────────────── SAVE ───────────────────────── */
+  var SAVE_KEY = 'pakistan-runner-v1';
+  function freshSave() {
+    return { last: 0, coins: 0, best: 0, done: {}, items: {}, cameos: {}, words: {}, badges: {}, upg: { power: 0, magnet: 0, heart: 0, value: 0 }, robe: 0, cap: 'kufi', ownRobes: [0], ownCaps: ['kufi'], sound: 'full', played: false };
+  }
+  function loadSave() {
+    try {
+      var s = JSON.parse(localStorage.getItem(SAVE_KEY));
+      if (s && typeof s === 'object') { var f = freshSave(); for (var k in f) if (s[k] === undefined) s[k] = f[k]; if (s.last >= N) s.last = 0; return s; }
+    } catch (e) { /* storage blocked: play without saving */ }
+    return freshSave();
+  }
+  var save = loadSave();
+  function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* ignore */ } }
+  function unlocked(i) { return i === 0 || i === 10 || !!save.done[D.scenes[i - 1].id]; }
+  function count(o) { return Object.keys(o).length; }
+
+  /* ───────────────────────── STATE ───────────────────────── */
+  var G = {
+    state: 'title', idx: 0, sc: D.scenes[0], part: D.parts[0], t: 0, st: 0, dist: 0, mv: 0, speed: 0, score: 0,
+    objs: [], p: null, fx: null, max: {}, hearts: 3, maxHearts: 3, chase: { show: false, d: 16, t: 0 }, shake: 0
+  };
+  var arm = null, lastCoinSfx = 0, toastTimer = 0, cameoTimer = 0, hintTimer = 0, showcase = 0, hudTick = 0;
+  function freshPlayer() { return { lane: 0, x: 0, prevX: 0, y: 0, vy: 0, surf: 0, air: false, roll: 0, slam: false, inv: 1.2, phase: 0 }; }
+  function freshFx() { return { shield: false, fly: 0, magnet: 0, double: 0, slow: 0, dash: 0, jump: 0 }; }
+  G.p = freshPlayer(); G.fx = freshFx();
+
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function lower(s) { return s.replace(/^(A|An|The) /, function (m) { return m.toLowerCase(); }); }
+  function arNum(n) { return String(n).split('').map(function (d) { return D.numerals[+d]; }).join(''); }
+
+  /* ───────────────────────── SCENE SET-UP ───────────────────────── */
+  function look() { return { robe: D.shop.robes[save.robe].c, hat: save.cap !== 'kufi' ? save.cap : (G.sc.hat || 'kufi'), outfit: G.sc.outfit }; }
+  function setScene(idx) {
+    G.idx = idx; G.sc = D.scenes[idx]; G.part = D.parts[G.sc.part]; Au.setPart(G.sc.part);
+    clearObjs(); Wd.setScene(G.sc); Wd.setLook(look());
+  }
+  function clearObjs() { G.objs.forEach(function (o) { Wd.remove(o); }); G.objs = []; }
+  function add(o) { G.objs.push(o); Wd.add(o); return o; }
+  function resetRun() {
+    clearObjs();
+    G.st = 0; G.dist = 0; G.nextChunk = 14; G.chunk = 0; G.mv = 0;
+    G.maxHearts = 3 + save.upg.heart; G.hearts = G.maxHearts; G.bumps = 0; G.sceneCoins = 0; G.score = 0;
+    G.p = freshPlayer(); G.fx = freshFx(); G.max = {};
+    G.wi = 0; G.li = 0; G.spelled = {}; G.round = 0;
+    G.item = 0; G.itemAt = 24 * SECS / 60; G.itemTries = 0; G.gotItem = false;
+    G.cameo = 0; G.met = {}; G.skate = 0; G.gate = false; G.calm = 0; G.dip = 0; G.shake = 0; G.paraded = false;
+    G.feast = 0; G.feastCount = 0; G.pendingArm = 0; G.lastStumble = -99;
+    G.chase = { show: true, d: 4.8, t: 2.4 };
+    setWord();
+    coins(0, 24, 6); add({ k: 'let', lane: pick([-1, 1]), z: 58, y: 1.1 });
+  }
+  function word() { return G.sc.words[G.wi]; }
+  function letters(w) { return Array.from(w[0]).filter(function (ch) { return ch !== ' '; }); }
+  function curLetter() { return letters(word())[G.li]; }
+
+  /* ───────────────────────── SPAWNING ───────────────────────── */
+  function ob(cls, lane, z) { return add({ k: 'ob', cls: cls, style: G.sc.obst[cls][0], lane: lane, z: z }); }
+  function rideLen() { return pick({ train: [16, 24, 32], bus: [16, 16, 24], truck: [16, 16], wagon: [12, 16], wall: [12, 18, 24], hedge: [12, 18, 24] }[G.sc.ride] || [16]); }
+  function ride(lane, z, len, ramp, v) { return add({ k: 'ride', style: G.sc.ride, lane: lane, z: z, len: len, ramp: !!ramp, v: v || 0 }); }
+  function coins(lane, z, n, y, gap, skin) { for (var i = 0; i < n; i++) add({ k: 'coin', lane: lane, z: z + i * (gap || 2.6), y: y == null ? 0.9 : y, skin: skin || G.sc.coin }); }
+  function arcCoins(lane, z) { [0.9, 1.7, 2.3, 1.7, 0.9].forEach(function (y, i) { add({ k: 'coin', lane: lane, z: z - 4 + i * 2, y: y, skin: G.sc.coin }); }); }
+  function letter(lane, z, y) { add({ k: 'let', lane: lane, z: z, y: y || 1.1 }); }
+  function pow(kind, lane, z, y) { add({ k: 'pow', kind: kind, part: G.sc.part, lane: lane, z: z, y: y || 1.2 }); }
+  function spawnChunk() {
+    var d = G.idx / (N - 1), z = SPAWN_Z, L = shuffle([-1, 0, 1]), len, len2, wantL = G.chunk % 4 !== 3;
+    G.chunk++;
+    if (G.calm > 0) return 10;
+    if (G.chunk % 9 === 5) { pow(pick(POW_KINDS), L[0], z + 4); ob(pick(['low', 'high']), L[1], z + 4); return 12; }
+    var pats = d < 0.1 ? ['single', 'single', 'train', 'rowLow', 'zig', 'coins', 'rampTrain']
+      : d < 0.45 ? ['single', 'double', 'train', 'rampTrain', 'twoTrains', 'rowLow', 'rowHigh', 'mix', 'zig', 'stairs']
+        : ['double', 'train', 'rampTrain', 'twoTrains', 'rowLow', 'rowHigh', 'mix', 'stairs', 'oncoming', 'oncoming', 'zig'];
+    switch (pick(pats)) {
+      case 'single': ob(pick(['low', 'high', 'full']), L[0], z + 6); coins(L[1], z, 6); if (wantL) { letter(L[2], z + 4); letter(L[2], z + 12); } return 18;
+      case 'double': ob(pick(['full', 'low', 'high']), L[0], z + 6); ob(pick(['full', 'low', 'high']), L[1], z + 6); coins(L[2], z, 5); if (wantL) letter(L[2], z + 16); return 18;
+      case 'rowLow': ob('low', -1, z + 6); ob('low', 0, z + 6); ob('low', 1, z + 6); arcCoins(L[0], z + 6); if (wantL) letter(L[1], z + 15); return 17;
+      case 'rowHigh': ob('high', -1, z + 6); ob('high', 0, z + 6); ob('high', 1, z + 6); coins(L[0], z + 1, 4, 0.55, 2); if (wantL) letter(L[1], z + 15); return 17;
+      case 'mix': ob('low', L[0], z + 6); ob('high', L[1], z + 6); ob('full', L[2], z + 6); coins(L[0], z + 11, 3); if (wantL) letter(L[1], z + 15); return 17;
+      case 'train': len = rideLen(); ride(L[0], z + 4, len); coins(L[1], z + 2, Math.floor(len / 3)); if (wantL) letter(L[2], z + len / 2); return len + 9;
+      case 'rampTrain':
+        len = rideLen(); ride(L[0], z + 4 + RAMP, len, true); coins(L[0], z + 5 + RAMP, Math.floor(len / 2.6), RIDE_H + 0.9);
+        ride(L[1], z + 4 + RAMP, rideLen()); ob(pick(['low', 'high']), L[2], z + 12);
+        if (wantL) letter(L[0], z + 4 + RAMP + len * 0.7, RIDE_H + 1.1);
+        return RAMP + len + 9;
+      case 'twoTrains':
+        len = rideLen(); len2 = rideLen(); var off = rnd(0, 8);
+        ride(L[0], z + 4, len); ride(L[1], z + 4 + off, len2);
+        coins(L[2], z + 2, 4); ob(pick(['low', 'high']), L[2], z + 16); if (wantL) letter(L[2], z + 26);
+        return Math.max(len, len2 + off) + 10;
+      case 'stairs':
+        ride(L[0], z + 4 + RAMP, 16, true); coins(L[0], z + 5 + RAMP, 5, RIDE_H + 0.9, 3);
+        ride(L[1], z + 14 + RAMP, 24); coins(L[1], z + 24 + RAMP, 5, RIDE_H + 0.9, 3);
+        ob('low', L[2], z + 14);
+        if (wantL) letter(L[1], z + 34 + RAMP, RIDE_H + 1.1);
+        return RAMP + 44;
+      case 'oncoming':
+        ride(L[0], z + 30, 24, false, 7 + d * 6); coins(L[1], z + 2, 7);
+        if (Math.random() < 0.5) ride(L[2], z + 6, rideLen());
+        if (wantL) letter(L[1], z + 22);
+        return 24;
+      case 'zig': coins(L[0], z, 3); coins(L[1], z + 9, 3); coins(L[2], z + 18, 3); letter(L[2], z + 27); letter(L[2], z + 33); return 34;
+      default: coins(L[0], z, 8); letter(L[1], z + 8); letter(L[1], z + 16); return 22;
+    }
+  }
+  function knockAhead(zMax) { // send everything ahead flying out of the way
+    G.objs.forEach(function (o) {
+      if ((o.k === 'ob' || o.k === 'ride') && o.z > 1.2 && o.z - (o.ramp ? RAMP : 0) < zMax && o.knock == null) { o.knock = 0; o.pass = true; o.knocked = true; }
+    });
+  }
+  function coinCarpet(len, skin) {
+    knockAhead(len + 10);
+    for (var z = 14; z < len; z += 3) for (var l = -1; l <= 1; l++) add({ k: 'coin', lane: l, z: z, y: 0.9, skin: skin || G.sc.coin });
+    G.calm = Math.max(G.calm, Math.max(0, (len - SPAWN_Z) / Math.max(1, G.speed)) + 0.6);
+  }
+
+  /* ───────────────────────── EVENTS ───────────────────────── */
+  function toast(html, cls, ms) { var el = $('toast'); el.innerHTML = html; el.className = 'on ' + (cls || ''); toastTimer = (ms || 1800) / 1000; }
+  function award(id) {
+    if (save.badges[id]) return;
+    var b = D.badges.filter(function (x) { return x.id === id; })[0]; if (!b) return;
+    save.badges[id] = true; persist();
+    if (G.state === 'run') toast('Badge unlocked<small>' + esc(b.name) + '</small>', 'gold', 2200);
+  }
+  function powerSecs(kind) { return D.powerups[kind].secs * (1 + 0.2 * save.upg.power); }
+  function activate(kind, quiet) {
+    var fx = G.fx, p = G.p, pu = D.powerups[kind];
+    if (kind === 'shield') fx.shield = true;
+    else { fx[kind] = powerSecs(kind); G.max[kind] = fx[kind]; }
+    if (kind === 'fly') {
+      p.roll = 0; p.vy = 0;
+      var lane = p.lane, n = 0;
+      for (var z = 16; z < G.speed * fx.fly - 6; z += 3) { if (n++ % 7 === 6) lane = Math.max(-1, Math.min(1, lane + pick([-1, 1]))); add({ k: 'coin', lane: lane, z: z, y: FLY_Y + 0.9, skin: G.sc.coin }); }
+      Au.sfx('launch');
+    } else Au.sfx('power');
+    if (!quiet) toast(esc(pu.name[G.sc.part]) + '<small>' + esc(pu.text) + '</small>', 'gold', 1500);
+  }
+  function showChase(secs) { G.chase.show = true; G.chase.d = 4.4; G.chase.t = secs; }
+  function cameoEvent(cm) {
+    cm = cm || G.sc.cameo; var first = !G.met[cm.id]; G.met[cm.id] = true;
+    if (!save.cameos[cm.id]) { save.cameos[cm.id] = true; persist(); if (count(save.cameos) >= TOTAL_CAMEOS) award('guests'); }
+    if (!first) { toast(esc(cm.name) + '<small>+25 ' + esc(G.part.coinName) + '</small>', 'gold', 1400); earn(25); return; }
+    var card = $('cameoCard');
+    card.innerHTML = '<div class="k">' + (cm.type === 'mascot' ? 'Legend of the place' : cm.type === 'legend' ? 'Pakistani legend' : 'Cameo') + '</div><div class="n">' + esc(cm.name) + '</div><div>' + esc(cm.known) + '</div><div class="g">' + esc(cm.giftText) + '</div>';
+    card.classList.remove('hidden'); cameoTimer = 7; G.score += 100;
+    if (cm.beat) Au.boost(10);
+    switch (cm.gift) {
+      case 'fly': activate('fly', true); if (cm.id === 'tyres') award('tyre'); break;
+      case 'magnet': case 'double': case 'slow': case 'dash': case 'shield': case 'jump': activate(cm.gift, true); break;
+      case 'coins': coinCarpet(80); Au.sfx('power'); break;
+      case 'feast': coinCarpet(Math.round(G.speed * 7), 'samosa'); G.feast = 9; G.feastCount = 0; Au.sfx('power'); break;
+      case 'clear': knockAhead(SPAWN_Z + 10); G.calm = Math.max(G.calm, 2.5); Au.sfx('launch'); break;
+      case 'heart': if (G.hearts < G.maxHearts) G.hearts++; else earn(50); Au.sfx('power'); break;
+      case 'arm': G.pendingArm = 1.1; break;
+      case 'skate':
+        activate('dash', true); G.fx.dash = G.max.dash = powerSecs('dash') * 1.5; G.skate = G.fx.dash;
+        coinCarpet(Math.round(G.speed * 1.6 * G.fx.dash) + 14); Au.boost(G.fx.dash); award('skate'); break;
+    }
+  }
+  function earn(n) { save.coins += n; G.sceneCoins += n; }
+  function loseHeart(msg) {
+    var p = G.p, fx = G.fx;
+    if (fx.shield) { fx.shield = false; p.inv = 1.2; Au.sfx('power'); toast('The shield saved you!', 'gold', 1200); return; }
+    G.hearts--; G.bumps++; p.inv = 1.8; G.dip = 0.9; G.shake = 0.45; Au.sfx('hit'); showChase(4);
+    toast(msg + '<small>Right behind you: ' + esc(lower(G.sc.chaser)) + '</small>', 'bad', 1700);
+    if (G.hearts <= 0) fail();
+  }
+  function stumble(ox) {
+    var p = G.p, lane = Math.round(p.prevX / LANE);
+    if (lane * LANE === ox) lane += p.prevX < ox ? -1 : 1;
+    p.lane = Math.max(-1, Math.min(1, lane)); p.x = p.prevX;
+    if (p.inv > 0) return;
+    Au.sfx('hit'); G.shake = 0.25; showChase(3.5); p.inv = 0.5;
+    if (G.t - G.lastStumble < 5) { G.lastStumble = -99; loseHeart('Stumbled twice!'); }
+    else { G.lastStumble = G.t; toast('Stumble!<small>Do it again soon and ' + esc(lower(G.sc.chaser)) + ' will catch you</small>', 'bad', 1500); }
+  }
+  function wordDone() {
+    var w = word(), cheer = pick(G.part.cheers), firstTime = !G.spelled[w[0]];
+    G.spelled[w[0]] = true; save.words[w[0]] = true;
+    var n = count(save.words);
+    earn(firstTime ? 20 : 5); G.score += 250; Au.sfx('word');
+    toast('<span class="native" dir="rtl">' + esc(w[0]) + '</span>' + esc(w[1]) + ' · ' + esc(w[2]) + '<small>' + esc(cheer[1]) + ' — ' + esc(cheer[2]) + '</small>', 'gold', 2400);
+    if (n >= 1) award('word1'); if (n >= 25) award('word25'); if (n >= TOTAL_WORDS) award('wordAll');
+    G.wi = (G.wi + 1) % G.sc.words.length; G.li = 0; if (G.wi === 0) G.round++;
+    setWord(); persist();
+  }
+  function collect(o) {
+    var fx = G.fx, sc = G.sc;
+    o.dead = true;
+    if (o.k === 'coin') {
+      earn((1 + save.upg.value) * (fx.double > 0 ? 2 : 1)); G.score += 10;
+      if (o.skin === 'samosa' && G.feast > 0 && ++G.feastCount >= 40) award('feast');
+      if (G.t - lastCoinSfx > 0.07) { Au.sfx('coin'); lastCoinSfx = G.t; }
+    } else if (o.k === 'let') {
+      G.li++; G.score += 50; Au.sfx('letter');
+      if (G.li >= letters(word()).length) wordDone(); else drawSlots();
+    } else if (o.k === 'pow') activate(o.kind);
+    else if (o.k === 'item') {
+      G.item = 2; G.gotItem = true; save.items[sc.id] = true; G.score += 500; earn(30); Au.sfx('item');
+      var it = sc.item, label = it.kind === 'scroll' ? 'Wisdom scroll ' + arNum(it.n) : 'History stamp';
+      toast(esc(label) + ' found!<small>' + esc(it.title) + '</small>', 'gold', 2400);
+      var scrolls = 0, stamps = 0; D.scenes.forEach(function (s) { if (save.items[s.id]) { if (s.item.kind === 'scroll') scrolls++; else stamps++; } });
+      if (scrolls >= 10) award('wisdom10'); if (stamps >= N - 10) award('stamps');
+      persist();
+    }
+  }
+
+  /* ───────────────────────── PHYSICS ───────────────────────── */
+  function rideX(o) { return o.lane * LANE; }
+  function surfaceAt(x, y) {
+    var s = 0;
+    for (var i = 0; i < G.objs.length; i++) {
+      var o = G.objs[i]; if (o.k !== 'ride' || o.knocked) continue;
+      if (Math.abs(x - rideX(o)) > 1.3) continue;
+      var h = -1;
+      if (o.z <= 0.3 && o.z + o.len >= -0.3) h = RIDE_H;
+      else if (o.ramp && o.z > 0 && o.z < RAMP) h = RIDE_H * (1 - o.z / RAMP);
+      if (h > s && y >= h - 0.65) s = h;
+    }
+    return s;
+  }
+  function collide() {
+    var p = G.p, fx = G.fx, flying = fx.fly > 0;
+    for (var i = 0; i < G.objs.length; i++) {
+      var o = G.objs[i]; if (o.dead) continue;
+      if (o.k === 'ride') {
+        if (flying || o.knocked) continue;
+        var rx = rideX(o), rdx = Math.abs(p.x - rx);
+        if (!(o.z < 0.35 && o.z + o.len > -0.35) || rdx >= 1.45 || p.y >= RIDE_H - 0.6) continue;
+        if (G.god) { p.y = RIDE_H; p.vy = 4; continue; }
+        if (Math.abs(p.prevX - rx) >= 1.45) stumble(rx);
+        else if (fx.dash > 0 || p.inv > 0) { p.y = RIDE_H; p.vy = 4; }
+        else { loseHeart('Ouch — ' + RIDE_NAME[o.style] + '!'); p.y = RIDE_H; p.vy = 5; if (G.state !== 'run') return; }
+        continue;
+      }
+      var ox = o.x != null ? o.x : o.lane * LANE, dx = Math.abs(p.x - ox);
+      if (o.k === 'ob') {
+        if (o.pass || flying || G.god) continue;
+        var depth = o.cls === 'full' ? 0.8 : 0.45;
+        if (o.z > depth || o.z < -depth || dx >= 1.3) continue;
+        var hit = o.cls === 'low' ? p.y < 0.95 : o.cls === 'high' ? (p.roll <= 0 && p.y < 2.6) : p.y < 2.3;
+        if (!hit) continue;
+        if (fx.dash > 0) { o.knock = 0; o.pass = true; G.score += 30; Au.sfx('tap'); continue; }
+        if (o.cls === 'full' && Math.abs(p.prevX - ox) >= 1.3) { stumble(ox); continue; }
+        o.pass = true;
+        if (p.inv <= 0) { o.knock = 0; loseHeart('Ouch — ' + esc(G.sc.obst[o.cls][1]) + '!'); if (G.state !== 'run') return; }
+        continue;
+      }
+      if (o.k !== 'coin' && o.k !== 'let' && o.k !== 'pow' && o.k !== 'item') continue;
+      if (o.z < 1.0 && o.z > -1.0 && dx < 1.05 && Math.abs(p.y + 0.9 - o.y) < (o.k === 'coin' ? 1.4 : 1.8)) collect(o);
+    }
+  }
+  function update(dt) {
+    G.t += dt;
+    if (toastTimer > 0 && (toastTimer -= dt) <= 0) $('toast').className = '';
+    if (cameoTimer > 0 && (cameoTimer -= dt) <= 0) $('cameoCard').classList.add('hidden');
+    if (hintTimer > 0 && (hintTimer -= dt) <= 0) $('hint').classList.add('hidden');
+    if (G.shake > 0) G.shake -= dt;
+    if (G.state === 'arm') { G.mv = 0; armUpdate(dt); return; }
+    if (G.state === 'title') {
+      G.mv = dt * 10; G.dist += G.mv; G.p.phase += dt * 6; showcase += dt;
+      if (showcase > 7) { showcase = 0; setScene(pick(TITLE_SCENES)); }
+      return;
+    }
+    if (G.state !== 'run') { G.mv = 0; return; }
+
+    var p = G.p, fx = G.fx, i, o;
+    G.st += dt;
+    var base = 15 + G.idx * 0.24 + Math.min(2.5, G.st / 20);
+    G.speed = base * (fx.slow > 0 ? 0.6 : 1) * (fx.dash > 0 ? 1.6 : 1) * (G.dip > 0 ? 0.6 : 1);
+    var mv = G.mv = G.speed * dt; G.dist += mv; G.score += mv;
+
+    ['magnet', 'double', 'slow', 'dash', 'jump'].forEach(function (n) { if (fx[n] > 0) fx[n] -= dt; });
+    if (fx.fly > 0) { fx.fly -= dt; if (fx.fly <= 0) p.inv = Math.max(p.inv, 1.4); }
+    if (p.inv > 0) p.inv -= dt; if (G.dip > 0) G.dip -= dt; if (G.calm > 0) G.calm -= dt;
+    if (G.feast > 0) G.feast -= dt; if (G.skate > 0) G.skate -= dt;
+    if (G.chase.t > 0 && (G.chase.t -= dt) <= 0) G.chase.show = false;
+    if (G.pendingArm > 0 && (G.pendingArm -= dt) <= 0) { startArm(); return; }
+
+    // sideways: snap quickly between lanes
+    p.prevX = p.x;
+    p.x += (p.lane * LANE - p.x) * Math.min(1, dt * 15);
+    if (Math.abs(p.lane * LANE - p.x) < 0.02) p.x = p.lane * LANE;
+
+    // everything moves toward the runner
+    for (i = 0; i < G.objs.length; i++) { o = G.objs[i]; o.z -= mv + (o.v ? o.v * dt : 0); }
+
+    // new things on the road
+    var gateAt = SECS - (SPAWN_Z + 6) / Math.max(10, G.speed);
+    if (!G.gate && G.st < gateAt) {
+      while (G.dist >= G.nextChunk) { var len = spawnChunk(); G.nextChunk += len + (14 - 6 * (G.idx / (N - 1))) + rnd(0, 5); }
+      var cm = G.sc.cameo;
+      if (cm && ((G.cameo === 0 && G.st > SECS * 0.15) || (G.cameo === 2 && G.st > SECS * 0.68))) {
+        var who = G.cameo === 0 ? cm : (G.sc.cameo2 || cm), side = G.cameo === 0 ? 1 : -1, sk = who.kind === 'skater';
+        add({ k: 'cameo', cm: who, x: side * (sk ? 5.3 : 6.8), z: SPAWN_Z, skate: sk, paceT: sk ? 3.6 : 0 }); G.cameo++;
+      }
+      if (G.sc.parade && !G.paraded && G.st > SECS * 0.55) {
+        G.paraded = true; var all = [];
+        D.scenes.forEach(function (s) { all = all.concat(guests(s)); });
+        all.forEach(function (g, k) { add({ k: 'parade', cm: g, x: (k % 2 ? -1 : 1) * 6.8, z: SPAWN_Z + k * 4.2 }); });
+      }
+      if (G.item === 0 && G.st > G.itemAt && G.itemTries < 3) {
+        var lane = pick([-1, 0, 1]), zz = SPAWN_Z + 3;
+        G.objs.forEach(function (a) { if ((a.k === 'ob' || a.k === 'ride') && a.lane === lane && a.z - (a.ramp ? RAMP : 0) < zz + 10 && a.z + (a.len || 0) > zz - 10) a.dead = true; });
+        add({ k: 'item', lane: lane, z: zz, y: 1.25 }); G.item = 1; G.itemTries++;
+      }
+    } else if (!G.gate) { G.gate = true; add({ k: 'gate', z: SPAWN_Z + 6, final: G.idx === N - 1 }); }
+
+    // up and down
+    var surf = surfaceAt(p.x, p.y);
+    p.surf = surf;
+    if (fx.fly > 0) { p.y += (FLY_Y - p.y) * Math.min(1, dt * 4); p.vy = 0; }
+    else if (p.y > surf + 0.02 || p.vy > 0) {
+      p.vy -= GRAV * dt; p.y += p.vy * dt;
+      if (p.y <= surf) { p.y = surf; p.vy = 0; if (p.slam) { p.slam = false; p.roll = ROLL_T; } }
+    } else { p.y = surf; p.vy = 0; }
+    p.air = fx.fly <= 0 && p.y > surf + 0.05;
+    if (p.roll > 0) p.roll -= dt;
+    p.phase += dt * G.speed * 0.42;
+    if (!p.air && fx.fly <= 0 && surf >= RIDE_H - 0.01) award('roof');
+
+    // magnet pulls coins in
+    var magR = 14 + save.upg.magnet * 5;
+    if (fx.magnet > 0) G.objs.forEach(function (c) { if (c.k === 'coin' && c.z < magR && c.z > -1) { c.lane += (p.x / LANE - c.lane) * Math.min(1, dt * 9); c.y += (p.y + 0.9 - c.y) * Math.min(1, dt * 9); } });
+
+    collide();
+    if (G.state !== 'run') return;
+
+    for (i = G.objs.length - 1; i >= 0; i--) {
+      o = G.objs[i];
+      if (o.k === 'gate') { if (o.z <= 0.2) { completeScene(); return; } continue; }
+      if (o.k === 'cameo') {
+        if (!o.done && o.z < 18) { o.done = true; cameoEvent(o.cm); if (G.cameo === 1) G.cameo = 2; }
+        if (o.skate && o.done && o.paceT > 0) { o.paceT -= dt; o.z += mv; o.z += (6.5 - o.z) * Math.min(1, dt * 1.6); }
+      }
+      if (o.dead || o.z + (o.len || 0) < BACK_Z) {
+        if (o.k === 'item' && !o.dead) { G.item = 0; G.itemAt = G.st + 11 * SECS / 60; }
+        if (o.k === 'item' && o.dead && !G.gotItem) { G.item = 0; } // cleared by accident: try again
+        Wd.remove(o); G.objs.splice(i, 1);
+      }
+    }
+    updateHud(dt);
+  }
+
+  /* ───────────────────────── HUD ───────────────────────── */
+  var hudCache = {};
+  function setWord() {
+    var w = word();
+    $('wordNative').textContent = w[0];
+    $('wordMeta').innerHTML = '<b>' + esc(w[1]) + '</b> · ' + esc(w[2]);
+    drawSlots();
+  }
+  function drawSlots() {
+    var ls = letters(word()), html = '';
+    for (var i = 0; i < ls.length; i++) html += '<span class="slot ' + (i < G.li ? 'got' : i === G.li ? 'next' : '') + '">' + esc(ls[i]) + '</span>';
+    $('wordSlots').innerHTML = html;
+  }
+  function updateHud(dt) {
+    var hk = G.hearts + '/' + G.maxHearts;
+    if (hudCache.h !== hk) { hudCache.h = hk; var s = ''; for (var i = 0; i < G.maxHearts; i++) s += '<span class="' + (i < G.hearts ? '' : 'lost') + '">♥</span>'; $('hearts').innerHTML = s; $('fxOverlay').classList.toggle('danger', G.hearts === 1); }
+    if (hudCache.c !== save.coins) { hudCache.c = save.coins; $('coins').textContent = save.coins; }
+    var sc = Math.floor(G.score); if (hudCache.s !== sc) { hudCache.s = sc; $('score').textContent = sc; }
+    $('progressBar').style.width = Math.min(100, G.st / SECS * 100) + '%';
+    $('fxOverlay').classList.toggle('slow', G.fx.slow > 0);
+    hudTick -= dt || 0;
+    if (hudTick <= 0) {
+      hudTick = 0.1;
+      var fx = G.fx, html = '';
+      if (fx.shield) html += pill('shield', 1);
+      ['fly', 'magnet', 'double', 'slow', 'dash', 'jump'].forEach(function (n) { if (fx[n] > 0) html += pill(n, fx[n] / (G.max[n] || 1)); });
+      if (hudCache.pw !== html) { hudCache.pw = html; $('powers').innerHTML = html; }
+    }
+  }
+  function pill(kind, frac) {
+    var pu = D.powerups[kind];
+    return '<div class="pw" style="--c:' + pu.color + '"><span>' + esc(pu.name[G.sc.part]) + '</span><i style="width:' + Math.round(Math.max(0, frac) * 100) + '%"></i></div>';
+  }
+
+  /* ───────────────────────── SCREENS ───────────────────────── */
+  var SCREENS = ['s-title', 's-intro', 's-outro', 's-msg', 's-pause', 's-list', 's-arm'];
+  function show(id) { SCREENS.forEach(function (s) { $(s).classList.toggle('hidden', s !== id); }); $('hud').classList.toggle('hidden', !(id === null || id === 's-pause' || id === 's-arm')); }
+  function chips(sc, dimMissing) {
+    return '<div class="chips">' + sc.words.map(function (w) {
+      var miss = dimMissing && !G.spelled[w[0]];
+      return '<div class="chip' + (miss ? ' miss' : '') + '"><span class="native" dir="rtl">' + esc(w[0]) + '</span>' + esc(w[1]) + ' · ' + esc(w[2]) + '</div>';
+    }).join('') + '</div>';
+  }
+  function itemLabel(sc) { return sc.item.kind === 'scroll' ? 'Wisdom scroll ' + arNum(sc.item.n) : 'History stamp'; }
+  function cameoBox(sc) {
+    var gs = guests(sc);
+    if (gs.length) return gs.map(function (cm) { return '<div class="box cameo"><span class="k">' + (cm.type === 'mascot' ? 'Legend of the place' : cm.type === 'legend' ? 'Pakistani legend on the roadside' : 'Cameo on the roadside') + '</span><b>' + esc(cm.name) + '</b>' + esc(cm.known) + '</div>'; }).join('');
+    if (sc.parade) return '<div class="box cameo"><span class="k">The grand finale</span><b>Every guest lines the road</b>All the guests from the journey come out to cheer you home, under the fireworks.</div>';
+    if (sc.quiet) return '<div class="box quiet">' + esc(sc.quiet) + '</div>';
+    return '';
+  }
+  function openIntro(idx) {
+    setScene(idx); resetRun(); G.state = 'intro'; save.last = idx; persist(); Au.music(false);
+    var sc = G.sc, part = G.part;
+    $('introCard').innerHTML =
+      '<div class="eyebrow">Scene ' + (idx + 1) + ' of ' + N + ' · ' + esc(part.title) + '</div>' +
+      '<div class="scene-head"><h2>' + esc(sc.name) + '</h2><div class="native" dir="rtl">' + esc(sc.native) + '</div></div>' +
+      '<p class="meta">' + esc(sc.where) + ' · ' + esc(sc.when) + '</p>' +
+      '<p class="banner">' + esc(sc.banner) + '</p><p>' + esc(sc.story) + '</p><p class="ref">' + esc(sc.ref) + '</p>' +
+      '<h3>Words to spell in ' + esc(part.langName) + '</h3>' + chips(sc) +
+      '<div class="box item"><span class="k">Hidden in this scene</span><b>' + esc(itemLabel(sc)) + (save.items[sc.id] ? ' ✓ found' : '') + '</b>Watch for the glow about halfway along.</div>' +
+      cameoBox(sc) +
+      '<div class="btn-col"><button id="i-run" class="btn primary">Run!</button><button id="i-back" class="btn ghost">' + esc(S.quit) + '</button></div>';
+    $('i-run').onclick = startRun; $('i-back').onclick = openTitle;
+    show('s-intro');
+  }
+  function startRun() {
+    Au.unlock(); if (G.st > 0 || G.state === 'fail') resetRun();
+    G.state = 'run'; save.played = true; hudCache = {}; show(null); updateHud(0);
+    $('sceneLabel').textContent = 'Scene ' + (G.idx + 1) + ' · ' + G.sc.name;
+    $('cameoCard').classList.add('hidden');
+    if (count(save.done) === 0) { $('hint').innerHTML = esc(S.howtoText[0]) + '<br>' + esc(S.howtoText[1]) + '<br>' + esc(S.howtoText[2]); $('hint').classList.remove('hidden'); hintTimer = 7; }
+    Au.music(true);
+  }
+  function completeScene() {
+    var sc = G.sc; G.state = 'outro'; Au.music(false); Au.sfx('gate');
+    save.done[sc.id] = true; save.last = Math.min(N - 1, G.idx + 1); if (G.score > save.best) save.best = Math.floor(G.score);
+    if (G.bumps === 0) award('flawless'); if (G.idx === 9) award('pillars'); if (sc.id === 'k2') award('summit'); if (G.idx === N - 1) award('azadi');
+    persist();
+    var cheer = pick(G.part.cheers), spelled = count(G.spelled), it = sc.item;
+    var itemHtml = G.gotItem || save.items[sc.id]
+      ? '<div class="box item"><span class="k">' + esc(itemLabel(sc)) + '</span><b>' + esc(it.title) + '</b>' + esc(it.text) + ' <i>(' + esc(it.ref) + ')</i></div>'
+      : '<div class="box quiet">You missed the hidden ' + esc(G.part.itemName.toLowerCase()) + '. Play the scene again to find it.</div>';
+    var met = guests(sc).filter(function (g) { return G.met[g.id]; }).map(function (g) { return esc(g.name); });
+    $('outroCard').innerHTML =
+      '<div class="eyebrow">' + esc(S.sceneDone) + ' · ' + (G.idx + 1) + ' of ' + N + '</div><h2>' + esc(sc.name) + '</h2>' +
+      '<p class="cheer"><span class="native" dir="rtl">' + esc(cheer[0]) + '</span>' + esc(cheer[1]) + ' — ' + esc(cheer[2]) + '</p>' +
+      '<div class="stats"><div class="stat"><b>' + G.sceneCoins + '</b>' + esc(G.part.coinName) + '</div><div class="stat"><b>' + spelled + ' / ' + sc.words.length + '</b>words spelled</div><div class="stat"><b>' + G.bumps + '</b>bumps</div></div>' +
+      chips(sc, true) + itemHtml + (met.length ? '<div class="box cameo"><span class="k">You met</span><b>' + met.join(' and ') + '</b></div>' : '') +
+      '<div class="btn-col"><button id="o-next" class="btn primary">' + (G.idx === N - 1 ? 'Finish' : esc(S.next)) + '</button><div class="btn-row"><button id="o-again" class="btn">Play again</button><button id="o-title" class="btn">' + esc(S.quit) + '</button></div></div>';
+    $('o-next').onclick = nextScene; $('o-again').onclick = function () { openIntro(G.idx); }; $('o-title').onclick = openTitle;
+    show('s-outro');
+  }
+  function nextScene() {
+    if (G.idx === 9) {
+      message('<div class="eyebrow">' + esc(S.part1Done) + '</div><h2>The Five Pillars</h2><p>' + esc(S.part1Text) + '</p>' +
+        '<div class="chips">' + D.pillars.map(function (p) { return '<div class="chip"><span class="native" dir="rtl">' + esc(p[0]) + '</span><b>' + esc(p[1]) + '</b><br>' + esc(p[2]) + '</div>'; }).join('') + '</div>',
+        'Sail to Pakistan', function () { openIntro(10); });
+    } else if (G.idx === N - 1) {
+      message('<div class="eyebrow">Journey complete</div><h2>' + esc(S.endTitle) + '</h2><p>' + esc(S.endText) + '</p>' +
+        '<div class="stats"><div class="stat"><b>' + count(save.words) + ' / ' + TOTAL_WORDS + '</b>words</div><div class="stat"><b>' + count(save.items) + ' / ' + N + '</b>scrolls & stamps</div><div class="stat"><b>' + count(save.cameos) + ' / ' + TOTAL_CAMEOS + '</b>guests met</div></div>' +
+        '<p class="cheer"><span class="native" dir="rtl">پاکستان زندہ باد</span>Pākistān zindabād</p>', S.quit, openTitle);
+    } else openIntro(G.idx + 1);
+  }
+  function fail() {
+    G.state = 'fail'; Au.music(false); Au.sfx('lose'); persist(); G.chase.show = true; G.chase.d = 3.2;
+    message('<div class="eyebrow">Scene ' + (G.idx + 1) + ' · ' + esc(G.sc.name) + '</div><h2>' + esc(S.failTitle) + '</h2><p><b>' + esc(G.sc.chaser) + '</b> caught up with you.</p><p class="muted">' + esc(S.failText) + '</p>',
+      S.retry, function () { resetRun(); startRun(); }, S.quit, openTitle);
+  }
+  function message(html, btn, fn, btn2, fn2) {
+    $('msgCard').innerHTML = html + '<div class="btn-col"><button id="m-ok" class="btn primary">' + esc(btn) + '</button>' + (btn2 ? '<button id="m-2" class="btn ghost">' + esc(btn2) + '</button>' : '') + '</div>';
+    $('m-ok').onclick = fn; if (btn2) $('m-2').onclick = fn2;
+    show('s-msg');
+  }
+  function soundLabel() { return 'Sound: ' + { full: 'Drum + melody', drum: 'Drum only', off: 'Off' }[save.sound]; }
+  function cycleSound() {
+    save.sound = { full: 'drum', drum: 'off', off: 'full' }[save.sound]; Au.setMode(save.sound); persist();
+    $('b-sound').textContent = soundLabel(); $('p-sound').textContent = soundLabel(); Au.unlock(); Au.sfx('coin');
+  }
+  var TITLE_SCENES = ['karachi', 'foodstreet', 'minar', 'hunza', 'azadi', 'rohtas', 'mehndi'].map(function (id) { for (var i = 0; i < N; i++) if (D.scenes[i].id === id) return i; return 0; });
+  function openTitle() {
+    G.state = 'title'; Au.music(false); showcase = 0; clearObjs(); G.p = freshPlayer(); G.fx = freshFx(); G.chase.show = false;
+    $('t-title').textContent = S.title; $('t-sub').textContent = S.subtitle; $('t-tag').textContent = S.tagline; $('t-blurb').textContent = S.blurb;
+    $('b-new').textContent = S.newGame; $('b-pk').textContent = S.jumpPk; $('b-scenes').textContent = S.scenes; $('b-album').textContent = S.album; $('b-shop').textContent = S.shop;
+    $('b-how').textContent = S.howto; $('b-sound').textContent = soundLabel(); $('t-credits').textContent = S.credits;
+    $('t-fact').textContent = 'Did you know? ' + pick(D.facts);
+    var cont = $('b-continue');
+    if (save.played) { cont.classList.remove('hidden'); cont.textContent = S.cont + ' · Scene ' + (save.last + 1) + ': ' + D.scenes[save.last].name; $('b-new').className = 'btn'; }
+    else { cont.classList.add('hidden'); $('b-new').className = 'btn primary'; }
+    $('fxOverlay').className = '';
+    show('s-title');
+  }
+
+  /* lists: scenes, album, shop */
+  function listShell(title, bodyHtml, extraHead) {
+    $('listCard').innerHTML = '<div class="list-head"><h2>' + esc(title) + '</h2><div>' + (extraHead || '') + ' <button id="l-close" class="btn">Close</button></div></div>' + bodyHtml;
+    $('l-close').onclick = openTitle; show('s-list');
+  }
+  function openScenes() {
+    var html = '';
+    D.parts.forEach(function (part, pi) {
+      html += '<h3>' + esc(part.title) + '</h3><p class="muted">' + esc(part.sub) + '</p><div class="grid">';
+      D.scenes.forEach(function (sc, i) {
+        if (sc.part !== pi) return; var open = unlocked(i);
+        html += '<button class="tile ' + (pi ? 'pk' : 'st') + (open ? '' : ' locked') + (save.done[sc.id] ? ' done' : '') + '" data-i="' + i + '"' + (open ? '' : ' disabled') + '><span class="num">SCENE ' + (i + 1) + (save.done[sc.id] ? ' ✓' : open ? '' : ' · locked') + '</span><span class="native" dir="rtl">' + esc(sc.native) + '</span><span class="nm">' + esc(sc.name) + '</span>' + esc(sc.when) + '</button>';
+      });
+      html += '</div>';
+    });
+    html += '<p style="text-align:center"><button id="l-reset" class="btn ghost">Reset all progress</button></p>';
+    listShell(S.scenes, html);
+    $('l-reset').onclick = function () { if (window.confirm('Erase all coins, words, stamps and badges and start again?')) { save = freshSave(); Au.setMode(save.sound); persist(); openTitle(); } };
+    Array.prototype.forEach.call($('listCard').querySelectorAll('button.tile'), function (b) { b.onclick = function () { openIntro(+b.getAttribute('data-i')); }; });
+  }
+  var albumTab = 'wisdoms';
+  function openAlbum() {
+    var tabs = [['wisdoms', 'Ten Wisdoms'], ['stamps', 'History stamps'], ['cameos', 'Guests'], ['words', 'Words'], ['badges', 'Badges']];
+    var html = '<div class="tabs">' + tabs.map(function (t) { return '<button class="tab' + (albumTab === t[0] ? ' on' : '') + '" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div><div class="grid">';
+    if (albumTab === 'wisdoms' || albumTab === 'stamps') {
+      D.scenes.forEach(function (sc, i) {
+        var it = sc.item; if ((albumTab === 'wisdoms') !== (it.kind === 'scroll')) return; var has = save.items[sc.id];
+        html += '<div class="tile ' + (has ? 'done' : 'locked') + '"><span class="num">' + esc(itemLabel(sc)).toUpperCase() + ' · SCENE ' + (i + 1) + '</span><span class="nm">' + (has ? esc(it.title) : '???') + '</span>' + (has ? esc(it.text) + ' <i>(' + esc(it.ref) + ')</i>' : 'Hidden in ' + esc(sc.name)) + '</div>';
+      });
+    } else if (albumTab === 'cameos') {
+      D.scenes.forEach(function (sc, i) {
+        guests(sc).forEach(function (cm) {
+          var has = save.cameos[cm.id];
+          html += '<div class="tile ' + (has ? 'done' : 'locked') + '"><span class="num">SCENE ' + (i + 1) + ' · ' + esc(sc.name).toUpperCase() + '</span><span class="nm">' + (has ? esc(cm.name) : '???') + '</span>' + (has ? esc(cm.known) : 'Meet this guest on the roadside.') + '</div>';
+        });
+      });
+    } else if (albumTab === 'words') {
+      D.scenes.forEach(function (sc) { sc.words.forEach(function (w) { var has = save.words[w[0]]; html += '<div class="tile ' + (has ? 'done' : 'locked') + '"><span class="native" dir="rtl">' + esc(w[0]) + '</span><span class="nm">' + esc(w[1]) + '</span>' + esc(w[2]) + '</div>'; }); });
+    } else {
+      D.badges.forEach(function (b) { var has = save.badges[b.id]; html += '<div class="tile ' + (has ? 'done' : 'locked') + '"><span class="num">' + (has ? 'EARNED' : 'LOCKED') + '</span><span class="nm">' + esc(b.name) + '</span>' + esc(b.text) + '</div>'; });
+    }
+    listShell(S.album, html + '</div>');
+    Array.prototype.forEach.call($('listCard').querySelectorAll('.tab'), function (b) { b.onclick = function () { albumTab = b.getAttribute('data-t'); openAlbum(); }; });
+  }
+  function openShop() {
+    var html = '<h3>Upgrades</h3>';
+    D.shop.upgrades.forEach(function (u) {
+      var lv = save.upg[u.id], maxed = lv >= u.costs.length, cost = u.costs[lv];
+      html += '<div class="row-item"><div><b>' + esc(u.name) + '</b> · level ' + lv + ' of ' + u.costs.length + '<small>' + esc(u.text) + '</small></div><button class="btn" data-up="' + u.id + '"' + (maxed || save.coins < cost ? ' disabled' : '') + '>' + (maxed ? 'MAX' : cost) + '</button></div>';
+    });
+    html += '<h3>Kameez colour</h3><div class="swatches">';
+    D.shop.robes.forEach(function (r, i) { var own = save.ownRobes.indexOf(i) >= 0; html += '<button class="swatch' + (save.robe === i ? ' on' : '') + '" data-robe="' + i + '"' + (!own && save.coins < r.cost ? ' disabled' : '') + '><i style="background:' + r.c + '"></i>' + esc(r.name) + '<br>' + (own ? (save.robe === i ? 'wearing' : 'owned') : r.cost) + '</button>'; });
+    html += '</div><h3>Cap</h3><div class="swatches">';
+    D.shop.caps.forEach(function (cp) { var own = save.ownCaps.indexOf(cp.id) >= 0; html += '<button class="swatch' + (save.cap === cp.id ? ' on' : '') + '" data-cap="' + cp.id + '"' + (!own && save.coins < cp.cost ? ' disabled' : '') + '>' + esc(cp.name) + '<br>' + (own ? (save.cap === cp.id ? 'wearing' : 'owned') : cp.cost) + '</button>'; });
+    html += '</div><p class="muted">Coins are earned in every scene and are never lost when you are caught.</p>';
+    listShell(S.shop, html, '<span class="bank"><span class="coin-dot"></span>' + save.coins + '</span>');
+    var card = $('listCard');
+    var refresh = function () { persist(); Wd.setLook(look()); openShop(); };
+    Array.prototype.forEach.call(card.querySelectorAll('[data-up]'), function (b) { b.onclick = function () { var u = D.shop.upgrades.filter(function (x) { return x.id === b.getAttribute('data-up'); })[0], cost = u.costs[save.upg[u.id]]; if (cost != null && save.coins >= cost) { save.coins -= cost; save.upg[u.id]++; Au.sfx('power'); refresh(); } }; });
+    Array.prototype.forEach.call(card.querySelectorAll('[data-robe]'), function (b) { b.onclick = function () { var i = +b.getAttribute('data-robe'), r = D.shop.robes[i]; if (save.ownRobes.indexOf(i) < 0) { if (save.coins < r.cost) return; save.coins -= r.cost; save.ownRobes.push(i); } save.robe = i; Au.sfx('coin'); refresh(); }; });
+    Array.prototype.forEach.call(card.querySelectorAll('[data-cap]'), function (b) { b.onclick = function () { var id = b.getAttribute('data-cap'), cp = D.shop.caps.filter(function (x) { return x.id === id; })[0]; if (save.ownCaps.indexOf(id) < 0) { if (save.coins < cp.cost) return; save.coins -= cp.cost; save.ownCaps.push(id); } save.cap = id; Au.sfx('coin'); refresh(); }; });
+  }
+  function openHow() {
+    message('<h2>' + esc(S.howto) + '</h2>' + S.howtoText.map(function (t) { return '<p>' + esc(t) + '</p>'; }).join('') +
+      '<h3>Power-ups</h3>' + Object.keys(D.powerups).map(function (k) { var p = D.powerups[k]; return '<p><b>' + esc(p.name[0]) + (p.name[1] !== p.name[0] ? ' / ' + esc(p.name[1]) : '') + '</b> — ' + esc(p.text) + '</p>'; }).join(''), 'Got it', openTitle);
+  }
+  function pause() { if (G.state !== 'run') return; G.state = 'pause'; Au.music(false); persist(); $('p-title').textContent = S.paused; $('p-resume').textContent = S.resume; $('p-restart').textContent = 'Restart scene'; $('p-sound').textContent = soundLabel(); $('p-quit').textContent = S.quit; show('s-pause'); }
+  function resume() { if (G.state !== 'pause') return; G.state = 'run'; show(null); Au.music(true); }
+
+  /* ───────────────────────── ARM WRESTLE ───────────────────────── */
+  function startArm() {
+    if (G.state !== 'run') return;
+    G.state = 'arm'; arm = { v: 50, t: 0, over: 0 }; $('a-title').textContent = S.armTitle; $('a-hint').textContent = S.armHint; show('s-arm'); armRender();
+  }
+  function armTap() { if (!arm || arm.over > 0) return; arm.v = Math.min(100, arm.v + 5.4); Au.sfx('tap'); }
+  function armRender() {
+    var th = (arm.v - 50) / 50 * 1.25, fx = 150 + Math.sin(th) * 72, fy = 118 - Math.cos(th) * 72;
+    $('armL').setAttribute('x2', fx); $('armL').setAttribute('y2', fy); $('armR').setAttribute('x2', fx); $('armR').setAttribute('y2', fy);
+    $('armFist').setAttribute('cx', fx); $('armFist').setAttribute('cy', fy); $('armFill').style.width = arm.v + '%';
+  }
+  function armUpdate(dt) {
+    if (!arm) return;
+    if (arm.over > 0) { arm.over -= dt; if (arm.over <= 0) { arm = null; G.state = 'run'; G.p.inv = 2; knockAhead(45); show(null); } return; }
+    arm.t += dt; if (arm.t > 0.7) arm.v -= (12 + Math.sin(arm.t * 3) * 4) * dt;
+    var win = arm.v >= 100 || (arm.t > 9 && arm.v >= 50), lose = arm.v <= 0 || (arm.t > 9 && arm.v < 50);
+    arm.v = Math.max(0, arm.v); armRender();
+    if (win) { arm.over = 1.7; earn(150); award('arm'); Au.sfx('win'); $('a-hint').textContent = S.armWin; persist(); }
+    else if (lose) { arm.over = 1.7; Au.sfx('lose'); $('a-hint').textContent = S.armLose; }
+  }
+
+  /* ───────────────────────── INPUT ───────────────────────── */
+  function act(a) {
+    if (G.state !== 'run') return;
+    var p = G.p, flying = G.fx.fly > 0, air = p.y > p.surf + 0.05;
+    if (a === 'left') { if (p.lane > -1) p.lane--; }
+    else if (a === 'right') { if (p.lane < 1) p.lane++; }
+    else if (a === 'up') { if (!flying && !air) { p.vy = G.fx.jump > 0 ? SUPER_V : JUMP_V; p.roll = 0; Au.sfx('jump'); } }
+    else if (a === 'down') { if (flying) return; if (air) { p.vy = Math.min(p.vy, -22); p.slam = true; } else p.roll = ROLL_T; Au.sfx('slide'); }
+  }
+  window.addEventListener('keydown', function (e) {
+    var k = e.key;
+    if (G.state === 'arm') { if (!e.repeat) armTap(); e.preventDefault(); return; }
+    if (G.state === 'run') {
+      if (k === 'ArrowLeft' || k === 'a' || k === 'A') act('left');
+      else if (k === 'ArrowRight' || k === 'd' || k === 'D') act('right');
+      else if (k === 'ArrowUp' || k === 'w' || k === 'W' || k === ' ') act('up');
+      else if (k === 'ArrowDown' || k === 's' || k === 'S') act('down');
+      else if (k === 'p' || k === 'P' || k === 'Escape') pause();
+      else return;
+      e.preventDefault(); return;
+    }
+    if (G.state === 'pause' && (k === 'p' || k === 'P' || k === 'Escape')) { resume(); return; }
+    if (k === 'Enter' || k === ' ') {
+      var b = document.querySelector('.screen:not(.hidden) .btn.primary:not(.hidden)');
+      if (b) { b.click(); e.preventDefault(); }
+    }
+  });
+  var touch = null;
+  cv.addEventListener('pointerdown', function (e) { Au.unlock(); touch = { x: e.clientX, y: e.clientY, used: false }; });
+  cv.addEventListener('pointermove', function (e) {
+    if (!touch || touch.used) return;
+    var dx = e.clientX - touch.x, dy = e.clientY - touch.y;
+    if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return;
+    touch.used = true;
+    if (Math.abs(dx) > Math.abs(dy)) act(dx > 0 ? 'right' : 'left'); else act(dy > 0 ? 'down' : 'up');
+  });
+  cv.addEventListener('pointerup', function () { if (touch && !touch.used) act('up'); touch = null; });
+  cv.addEventListener('pointercancel', function () { touch = null; });
+  $('s-arm').addEventListener('pointerdown', function (e) { e.preventDefault(); Au.unlock(); armTap(); });
+  $('btnPause').onclick = pause; $('p-resume').onclick = resume;
+  $('p-restart').onclick = function () { resetRun(); G.state = 'intro'; startRun(); };
+  $('p-quit').onclick = openTitle; $('p-sound').onclick = cycleSound; $('b-sound').onclick = cycleSound;
+  $('b-new').onclick = function () { Au.unlock(); openIntro(0); };
+  $('b-pk').onclick = function () { Au.unlock(); openIntro(10); };
+  $('b-continue').onclick = function () { Au.unlock(); openIntro(unlocked(save.last) ? save.last : 0); };
+  $('b-scenes').onclick = openScenes; $('b-album').onclick = openAlbum; $('b-shop').onclick = openShop; $('b-how').onclick = openHow;
+  document.addEventListener('visibilitychange', function () { if (document.hidden) pause(); });
+  window.addEventListener('blur', pause);
+  function resize() { Wd.resize(window.innerWidth, window.innerHeight, window.devicePixelRatio || 1); }
+  window.addEventListener('resize', resize);
+
+  /* ───────────────────────── MAIN LOOP ───────────────────────── */
+  function viewState() {
+    var p = G.p, fx = G.fx, running = G.state === 'run' || G.state === 'pause' || G.state === 'arm';
+    return {
+      t: G.t, mv: G.mv, dist: G.dist, objs: G.objs, part: G.sc.part, shake: G.state === 'run' ? G.shake : 0,
+      letter: running || G.state === 'intro' ? curLetter() : '',
+      p: { x: p.x, y: p.y, lane: p.lane, surf: p.surf, air: p.air, roll: p.roll > 0 ? ROLL_T - p.roll + 0.001 : 0, phase: p.phase, fly: fx.fly > 0, skate: G.skate > 0, shield: fx.shield, jumpBoost: fx.jump > 0, blink: p.inv > 0 && G.state === 'run' },
+      chase: { show: G.chase.show && G.state !== 'title', d: G.chase.d }
+    };
+  }
+  var last = 0;
+  function frame(now) {
+    var dt = Math.min(0.033, (now - last) / 1000 || 0); last = now;
+    update(dt); Wd.frame(viewState(), dt);
+    requestAnimationFrame(frame);
+  }
+  var lowGfx = qs.get('low') === '1' || (qs.get('low') !== '0' && window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+  try { Wd.init(cv, { low: lowGfx }); }
+  catch (e) {
+    document.body.innerHTML = '<div style="color:#fff;font:18px system-ui;padding:40px;text-align:center">Pakistan Runner needs 3D graphics (WebGL), which this browser has turned off. Try another browser or device.</div>';
+    return;
+  }
+  resize(); Au.setMode(save.sound);
+  setScene(pick(TITLE_SCENES));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { Wd.clearGlyphs(); });
+  if (qs.get('scene')) openIntro(Math.max(0, Math.min(N - 1, +qs.get('scene') - 1))); else openTitle();
+  requestAnimationFrame(frame);
+
+  // Small hooks used by the automated tests in tools/.
+  QR.debug = { G: G, add: add, ride: ride, ob: ob, coins: coins, stumble: stumble, showChase: showChase, save: function () { return save; }, act: act, step: update, startRun: startRun, openIntro: openIntro, cameo: cameoEvent, activate: activate, armTap: armTap, startArm: startArm, render: function () { Wd.frame(viewState(), 0.016); },
+    fast: function (secs, noRender) { for (var i = 0; i < secs * 60 && G.state === 'run'; i++) { update(1 / 60); Wd.frame(viewState(), 1 / 60, true); } if (!noRender) Wd.frame(viewState(), 0.001); } };
+})();
+
+</script>

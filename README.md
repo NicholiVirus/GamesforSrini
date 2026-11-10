@@ -21,6 +21,9 @@ python3 -m http.server 8000
 
 Then open `http://localhost:8000/pakistan-runner/`.
 
+**Play it from a Google link:** the `google-apps-script/` folder has the same game set
+up as a Google Apps Script web app. See `google-apps-script/README.md` for the steps.
+
 ### How to play
 
 | Action | Keyboard | Touch |
@@ -129,6 +132,7 @@ but a second pair of eyes is worth it.
 | `pakistan-runner/js/audio.js` | Sound effects and the background beat (full, drum-only or off) |
 | `pakistan-runner/js/vendor/three.min.js` | The three.js 3D library (r149, MIT licence) |
 | `tools/check-data.js` | Checks `data.js` for gaps, wrong letters and missing models |
+| `tools/build-gas.js` | Rebuilds the Google Apps Script version in `google-apps-script/` |
 
 To change a word, a fact or a guest, edit `data.js` only, then run the checker:
 
