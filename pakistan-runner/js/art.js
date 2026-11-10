@@ -1,5 +1,6 @@
-/* Quran Runner — Pakistan Journey
- * art.js: every picture in the game is drawn here with canvas shapes.
+/* Pakistan Runner
+ * art.js: 2D pictures drawn with canvas shapes: the painted sky and skyline
+ * behind the 3D world, the cameo guests on their standees, and the icons.
  * No image files are used, so the whole game works offline.
  */
 (function () {
@@ -557,6 +558,63 @@
       poly(c, [x - 26 * u, y - 22 * u, x - 20 * u, y - 29 * u, x - 14 * u, y - 20 * u, x - 20 * u, y - 16 * u], '#f2f6fa');
       poly(c, [x + 14 * u, y - 30 * u, x + 20 * u, y - 24 * u, x + 26 * u, y - 14 * u, x + 16 * u, y - 18 * u], '#dfe7ee');
       c.globalAlpha = 0.55; ell(c, x + 14 * u + Math.sin(t * 0.3) * 4 * u, y - 50 * u, 12 * u, 1.6 * u, '#ffffff'); c.globalAlpha = 1; // the summit's snow plume
+    },
+    deosai: function (c, x, y, u, t) {
+      c.fillStyle = '#8cc977'; c.beginPath(); c.moveTo(x - 80 * u, y); c.quadraticCurveTo(x - 35 * u, y - 9 * u, x, y - 6 * u); c.quadraticCurveTo(x + 38 * u, y - 10 * u, x + 80 * u, y); c.closePath(); c.fill();
+      ell(c, x + 8 * u, y - 3.2 * u, 24 * u, 2.6 * u, '#3fb6d6'); ell(c, x + 8 * u, y - 3.6 * u, 19 * u, 1.3 * u, '#8fe0f2');
+      for (var i = 0; i < 46; i++) circ(c, x - 70 * u + hash(i * 3) * 140 * u, y - 0.5 * u - hash(i * 7) * 6 * u, 0.55 * u, ['#ff7aa8', '#ffd24a', '#ffffff', '#c58bff'][i % 4]);
+      var bx = x - 30 * u, by = y - 5.6 * u; // a brown bear, far away
+      ell(c, bx, by, 3 * u, 1.6 * u, '#6b4a2e'); circ(c, bx - 2.9 * u, by - 0.7 * u, 1.1 * u, '#6b4a2e'); circ(c, bx - 3.2 * u, by - 1.8 * u, 0.4 * u, '#6b4a2e'); circ(c, bx - 2.2 * u, by - 1.8 * u, 0.4 * u, '#6b4a2e');
+      for (i = 0; i < 4; i++) rect(c, bx - 2.2 * u + i * 1.4 * u, by + 0.8 * u, 0.7 * u, 1.4 * u, '#5a3d22');
+    },
+    shandur: function (c, x, y, u, t) {
+      ell(c, x + 30 * u, y - 7.5 * u, 22 * u, 1.8 * u, '#58b6e0');
+      poly(c, [x - 46 * u, y, x + 46 * u, y, x + 32 * u, y - 7 * u, x - 32 * u, y - 7 * u], '#79b45f');
+      for (var i = 0; i < 4; i++) poly(c, [x - 46 * u + i * 23 * u, y, x - 34.5 * u + i * 23 * u, y, x - 26 * u + i * 16 * u, y - 7 * u, x - 32 * u + i * 16 * u, y - 7 * u], i % 2 ? '#86c06a' : '#79b45f');
+      [-1, 1].forEach(function (s) { rect(c, x + s * 30 * u - 2 * u, y - 6 * u, 0.4 * u, 4 * u, '#ffffff'); rect(c, x + s * 30 * u + 2 * u, y - 6 * u, 0.4 * u, 4 * u, '#ffffff'); });
+      for (i = 0; i < 14; i++) { var tx = x - 52 * u + i * 8 * u; poly(c, [tx - 2.5 * u, y - 7 * u, tx, y - 11 * u, tx + 2.5 * u, y - 7 * u], i % 3 ? '#f4f0e6' : '#e74c3c'); }
+      for (i = 0; i < 5; i++) { var fx = x - 40 * u + i * 20 * u; rect(c, fx, y - 16 * u, 0.3 * u, 9 * u, '#8a8a8a'); flagPK(c, fx + 0.3 * u, y - 16 * u, 4 * u, 2.6 * u); }
+      for (i = 0; i < 90; i++) circ(c, x - 46 * u + hash(i * 2.3) * 92 * u, y - 0.4 * u - hash(i * 5.7) * 1.2 * u, 0.4 * u, ['#ffffff', '#2ecc71', '#f1c40f', '#e74c3c'][i % 4]);
+      var hx = x - 6 * u + Math.sin(t * 0.8) * 12 * u, hy = y - 3.5 * u; // a galloping horse and rider
+      ell(c, hx, hy, 2.4 * u, 1 * u, '#8a5a3a'); rect(c, hx + 1.8 * u, hy - 2 * u, 0.9 * u, 2 * u, '#8a5a3a'); ell(c, hx + 2.6 * u, hy - 2 * u, 1 * u, 0.5 * u, '#8a5a3a');
+      for (i = 0; i < 4; i++) rect(c, hx - 1.8 * u + i * 1.2 * u, hy + 0.6 * u, 0.4 * u, 1.6 * u, '#6b4226');
+      rect(c, hx - 0.4 * u, hy - 3 * u, 1 * u, 2 * u, '#c0392b'); circ(c, hx + 0.1 * u, hy - 3.6 * u, 0.6 * u, '#c68e62'); line(c, hx + 0.5 * u, hy - 2.4 * u, hx + 3.5 * u, hy + 1.4 * u, '#f4f0e6', Math.max(1, 0.2 * u));
+    },
+    swat: function (c, x, y, u, t) {
+      for (var i = 0; i < 9; i++) { var px = x - 50 * u + i * 12.5 * u, ph = (6 + hash(i) * 6) * u; poly(c, [px - 3 * u, y - 4 * u, px, y - 4 * u - ph, px + 3 * u, y - 4 * u], i % 2 ? '#2f6f4a' : '#3a8358'); }
+      [[-30, 9], [-20, 12], [22, 10], [33, 8]].forEach(function (h) { var hx = x + h[0] * u, hy = y - h[1] * u; rect(c, hx - 3 * u, hy - 3 * u, 6 * u, 3 * u, '#c9a36b'); poly(c, [hx - 3.8 * u, hy - 3 * u, hx, hy - 5.6 * u, hx + 3.8 * u, hy - 3 * u], '#8e3b2f'); rect(c, hx - 0.6 * u, hy - 1.8 * u, 1.2 * u, 1.8 * u, '#5a3d22'); });
+      c.fillStyle = '#4fb3e0'; c.beginPath(); c.moveTo(x - 70 * u, y); c.quadraticCurveTo(x - 10 * u, y - 5 * u, x + 70 * u, y - 1 * u); c.lineTo(x + 70 * u, y); c.closePath(); c.fill();
+      c.globalAlpha = 0.6; for (i = 0; i < 10; i++) rect(c, x - 50 * u + hash(i * 3) * 100 * u, y - (0.6 + hash(i) * 2.4) * u, 5 * u, 0.25 * u, '#e6f7ff'); c.globalAlpha = 1;
+      [-1, 1].forEach(function (s) { rect(c, x + s * 16 * u - 0.6 * u, y - 13 * u, 1.2 * u, 13 * u, '#6b4526'); });
+      c.strokeStyle = '#3d2a18'; c.lineWidth = Math.max(1, 0.3 * u); c.beginPath(); c.moveTo(x - 16 * u, y - 13 * u); c.quadraticCurveTo(x, y - 4 * u, x + 16 * u, y - 13 * u); c.stroke();
+      rect(c, x - 16 * u, y - 6 * u, 32 * u, 0.7 * u, '#8a5a32');
+      for (i = -7; i <= 7; i++) { var q = i / 8, cy = y - 13 * u + 9 * u * (1 - q * q) * 0.98; line(c, x + i * 2 * u, cy, x + i * 2 * u, y - 6 * u, '#3d2a18', 1); }
+    },
+    mehndi: function (c, x, y, u, t) {
+      rect(c, x - 20 * u, y - 18 * u, 40 * u, 18 * u, '#e9d8b8'); rect(c, x - 21 * u, y - 19.4 * u, 42 * u, 1.6 * u, '#cdb68e');
+      archDoor(c, x, y, 7 * u, 11 * u, '#8e2a3a'); archDoor(c, x, y, 5 * u, 9 * u, '#5a1a24');
+      [-12, 12].forEach(function (dx) { archDoor(c, x + dx * u, y - 6 * u, 4 * u, 6 * u, '#ffcf7a'); });
+      var cols = ['#ffe08a', '#ff8a8a', '#8affc1', '#8ac8ff', '#ffffff'];
+      for (var k = 0; k < 21; k++) for (var j = 0; j < 9; j++) {
+        var on = Math.sin(t * 3 + k * 0.7 + j) > -0.2, lx = x - 20 * u + k * 2 * u, ly = y - 18 * u + j * 2 * u;
+        if (on) { glow(c, lx, ly, 1.4 * u, 'rgba(255,220,140,0.9)', 0.4); circ(c, lx, ly, 0.35 * u, cols[(k + j) % 5]); }
+      }
+      c.strokeStyle = '#ff9f1a'; c.lineWidth = 0.8 * u; c.beginPath(); c.arc(x, y - 9 * u, 9 * u, Math.PI * 1.05, Math.PI * 1.95); c.stroke();
+      for (k = 0; k < 13; k++) { var a = Math.PI * 1.05 + k * Math.PI * 0.9 / 12; circ(c, x + Math.cos(a) * 9 * u, y - 9 * u + Math.sin(a) * 9 * u, 0.7 * u, k % 2 ? '#ff9f1a' : '#ffd24a'); }
+    },
+    monument: function (c, x, y, u, t) {
+      rect(c, x - 34 * u, y - 3 * u, 68 * u, 3 * u, '#bdb6aa'); rect(c, x - 28 * u, y - 4.5 * u, 56 * u, 1.6 * u, '#d4cec3');
+      function petal(cx, by, w, h, lean, col) {
+        c.fillStyle = col; c.beginPath(); c.moveTo(cx - w / 2, by);
+        c.bezierCurveTo(cx - w / 2 + lean * 0.2, by - h * 0.6, cx + lean - w * 0.15, by - h * 0.95, cx + lean, by - h);
+        c.bezierCurveTo(cx + lean + w * 0.12, by - h * 0.7, cx + w / 2, by - h * 0.4, cx + w / 2, by); c.closePath(); c.fill();
+      }
+      glow(c, x, y - 18 * u, 40 * u, 'rgba(120,255,170,0.8)', 0.25);
+      petal(x - 9 * u, y - 4 * u, 13 * u, 30 * u, -7 * u, '#b9b2a6'); petal(x + 9 * u, y - 4 * u, 13 * u, 30 * u, 7 * u, '#a9a297');
+      petal(x - 3 * u, y - 4 * u, 12 * u, 36 * u, -2 * u, '#cfc9be'); petal(x + 3 * u, y - 4 * u, 12 * u, 36 * u, 2 * u, '#c4bdb2');
+      petal(x - 16 * u, y - 4 * u, 8 * u, 14 * u, -4 * u, '#d9d3c8'); petal(x, y - 4 * u, 8 * u, 13 * u, 0, '#e2ddd3'); petal(x + 16 * u, y - 4 * u, 8 * u, 14 * u, 4 * u, '#d9d3c8');
+      var cx = x, cy = y - 22 * u, r = 3 * u;
+      circ(c, cx, cy, r, '#f4d03f'); circ(c, cx + r * 0.35, cy - r * 0.2, r * 0.82, '#c4bdb2'); circ(c, cx + r * 0.6, cy - r * 0.5, r * 0.25, '#f4d03f');
     }
   };
   Art.landmark = function (c, w, h, hy, sc, t) {
@@ -761,6 +819,7 @@
       if (part === 1) { rect(c, -s * 0.7, -s * 0.3, s * 1.2, s * 1, '#ffffff'); c.beginPath(); c.arc(s * 0.6, s * 0.15, s * 0.35, -1.4, 1.4); c.stroke(); line(c, -s * 0.3, -s * 0.9, -s * 0.3, -s * 0.5, '#ffffff', 2); line(c, s * 0.15, -s * 0.9, s * 0.15, -s * 0.5, '#ffffff', 2); }
       else { c.beginPath(); c.arc(0, 0, s * 0.9, 0, TAU); c.stroke(); line(c, 0, 0, 0, -s * 0.6, '#ffffff', c.lineWidth); line(c, 0, 0, s * 0.4, 0, '#ffffff', c.lineWidth); }
     }
+    else if (kind === 'jump') { c.lineJoin = 'round'; for (var k = 0; k < 2; k++) { c.beginPath(); c.moveTo(-s * 0.7, s * (0.35 - k * 0.6)); c.lineTo(0, s * (-0.35 - k * 0.6)); c.lineTo(s * 0.7, s * (0.35 - k * 0.6)); c.stroke(); } rect(c, -s * 0.55, s * 0.62, s * 1.1, s * 0.28, '#ffffff'); }
     else if (kind === 'dash') { poly(c, [-s * 0.2, -s, s * 0.6, -s * 0.1, 0, -s * 0.1, s * 0.2, s, -s * 0.6, s * 0.1, 0, s * 0.1], '#ffffff'); }
     c.restore();
   };
@@ -919,6 +978,45 @@
       ell(c, 0.27 * u, -0.07 * u, 0.09 * u, 0.04 * u, '#7a3a1a'); c.restore();
       c.restore();
       c.globalAlpha *= 0.5; for (var k = 1; k <= 3; k++) line(c, x - (0.3 + k * 0.22) * u, y - (0.05 + k * 0.08) * u, x - (0.55 + k * 0.22) * u, y - (0.05 + k * 0.08) * u, '#ffffff', 2); c.globalAlpha *= 2;
+    },
+    bear: function (c, x, y, u, t) {
+      var col = '#6b4a2e', wv = Math.sin(t * 4) * 0.15;
+      rect(c, x - 0.45 * u, y - 0.5 * u, 0.3 * u, 0.5 * u, '#5a3d22'); rect(c, x + 0.15 * u, y - 0.5 * u, 0.3 * u, 0.5 * u, '#5a3d22');
+      ell(c, x, y - 0.95 * u, 0.62 * u, 0.62 * u, col); ell(c, x, y - 0.85 * u, 0.36 * u, 0.4 * u, '#a07a52');
+      c.strokeStyle = col; c.lineWidth = 0.26 * u; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(x - 0.5 * u, y - 1.25 * u); c.lineTo(x - 0.75 * u, y - 0.8 * u); c.stroke();
+      c.beginPath(); c.moveTo(x + 0.5 * u, y - 1.25 * u); c.lineTo(x + 0.85 * u, y - (1.9 + wv) * u); c.stroke();
+      circ(c, x, y - 1.75 * u, 0.42 * u, col); circ(c, x - 0.34 * u, y - 2.08 * u, 0.15 * u, col); circ(c, x + 0.34 * u, y - 2.08 * u, 0.15 * u, col);
+      ell(c, x, y - 1.62 * u, 0.2 * u, 0.15 * u, '#c9a07a'); circ(c, x, y - 1.68 * u, 0.06 * u, '#1e1611');
+      circ(c, x - 0.15 * u, y - 1.85 * u, 0.045 * u, '#1e1611'); circ(c, x + 0.15 * u, y - 1.85 * u, 0.045 * u, '#1e1611');
+    },
+    polo: function (c, x, y, u, t) {
+      var col = '#8a5a3a', g = Math.sin(t * 6) * 0.08 * u;
+      ell(c, x, y - 1.0 * u + g, 0.75 * u, 0.36 * u, col);
+      for (var i = 0; i < 4; i++) { var k = Math.sin(t * 9 + i * 1.6) * 0.2 * u; rect(c, x - 0.6 * u + i * 0.38 * u + k * 0.3, y - 0.75 * u + g, 0.1 * u, 0.75 * u - g, '#6b4226'); }
+      c.strokeStyle = col; c.lineWidth = 0.24 * u; c.lineCap = 'round'; c.beginPath(); c.moveTo(x + 0.55 * u, y - 1.1 * u + g); c.lineTo(x + 0.9 * u, y - 1.55 * u + g); c.stroke();
+      ell(c, x + 1.05 * u, y - 1.55 * u + g, 0.26 * u, 0.13 * u, col); c.strokeStyle = '#3a2418'; c.lineWidth = 0.08 * u; c.beginPath(); c.moveTo(x - 0.75 * u, y - 1.05 * u + g); c.quadraticCurveTo(x - 1.05 * u, y - 0.85 * u, x - 0.95 * u, y - 0.5 * u); c.stroke();
+      rect(c, x - 0.2 * u, y - 1.75 * u + g, 0.4 * u, 0.55 * u, '#1f6f78'); circ(c, x, y - 1.95 * u + g, 0.17 * u, '#c68e62'); HAT.pakol(c, x, y - 2.0 * u + g, 0.17 * u);
+      var sw = Math.sin(t * 4) * 0.6; line(c, x + 0.15 * u, y - 1.55 * u + g, x + 0.15 * u + Math.sin(sw) * 0.9 * u, y - 1.55 * u + Math.cos(sw) * 0.9 * u + g, '#f4f0e6', Math.max(1, 0.05 * u));
+      circ(c, x + 1.3 * u, y - 0.08 * u, 0.07 * u, '#ffffff');
+    },
+    reader: function (c, x, y, u, t) {
+      var h = person(c, x, y, u, { shirt: '#f3e5ea', pants: '#d98ca0', la: 0.5, ra: 0.5, dupatta: '#e17fa0', hair: false });
+      var by = Math.min(h.ly, h.ry) - 0.08 * u + Math.sin(t * 2) * 0.03 * u;
+      rect(c, x - 0.34 * u, by - 0.3 * u, 0.68 * u, 0.36 * u, '#2e86c1'); rect(c, x - 0.3 * u, by - 0.27 * u, 0.6 * u, 0.3 * u, '#fdfefe');
+      line(c, x, by - 0.27 * u, x, by + 0.03 * u, '#2e86c1', Math.max(1, 0.03 * u));
+      for (var i = 0; i < 3; i++) { line(c, x - 0.25 * u, by - (0.2 - i * 0.08) * u, x - 0.05 * u, by - (0.2 - i * 0.08) * u, '#aab7b8', 1); line(c, x + 0.05 * u, by - (0.2 - i * 0.08) * u, x + 0.25 * u, by - (0.2 - i * 0.08) * u, '#aab7b8', 1); }
+    },
+    dhol: function (c, x, y, u, t) {
+      [-0.55, 0.55].forEach(function (dx, k) {
+        var px = x + dx * u, hit = Math.sin(t * 9 + k * 1.3);
+        var h = person(c, px, y, u * 0.9, { shirt: k ? '#c0392b' : '#f1c40f', pants: '#f4f0e6', la: 0.45 + hit * 0.1, ra: 0.45 - hit * 0.1, hat: k ? 'turban' : 'none' });
+        rect(c, px - 0.32 * u, y - 0.98 * u, 0.64 * u, 0.42 * u, '#8e2a3a'); ell(c, px - 0.32 * u, y - 0.77 * u, 0.1 * u, 0.21 * u, '#f4e3c3'); ell(c, px + 0.32 * u, y - 0.77 * u, 0.1 * u, 0.21 * u, '#f4e3c3');
+        line(c, px - 0.32 * u, y - 0.98 * u, px + 0.32 * u, y - 0.56 * u, '#f1c40f', Math.max(1, 0.03 * u)); line(c, px - 0.32 * u, y - 0.56 * u, px + 0.32 * u, y - 0.98 * u, '#f1c40f', Math.max(1, 0.03 * u));
+        line(c, h.lx, h.ly, px - 0.36 * u, y - 0.8 * u - hit * 0.1 * u, '#5a3d22', Math.max(1, 0.04 * u)); line(c, h.rx, h.ry, px + 0.36 * u, y - 0.8 * u + hit * 0.1 * u, '#5a3d22', Math.max(1, 0.04 * u));
+      });
+      for (var i = 0; i < 3; i++) { var a = (t * 0.8 + i * 0.33) % 1; c.globalAlpha = 1 - a; c.fillStyle = '#ffffff'; c.font = Math.round(0.4 * u) + 'px sans-serif'; c.textAlign = 'center'; c.fillText('♪', x + (i - 1) * 0.45 * u, y - (1.9 + a * 0.9) * u); }
+      c.globalAlpha = 1;
     },
     sufi: function (c, x, y, u, t) { // a singer with a great cloud of curls and an ajrak shawl
       for (var i = 0; i < 9; i++) { var a = Math.PI + (i / 8) * Math.PI; circ(c, x + Math.cos(a) * 0.27 * u, y - 1.5 * u + Math.sin(a) * 0.27 * u, 0.13 * u, '#1e1611'); }

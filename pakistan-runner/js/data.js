@@ -1,4 +1,4 @@
-/* Quran Runner — Pakistan Journey
+/* Pakistan Runner
  * Content file: every word, place, story, fact and cameo lives here.
  * The engine (game.js) only reads from QR.DATA, so the game can be re-themed
  * or corrected by editing this file alone.
@@ -68,7 +68,7 @@
       ]
     },
     {
-      id: 'pakistan', title: 'Part 2 · Pakistan', sub: 'Twenty stops from the Arabian Sea to K2, through 4,500 years of history',
+      id: 'pakistan', title: 'Part 2 · Pakistan', sub: 'Twenty-five stops from the Arabian Sea to K2 and home for Independence Day',
       coinName: 'rupees', lang: 'ur', langName: 'Urdu', itemName: 'History stamp', flyName: 'Tyre launch', slowName: 'Chai break',
       cheers: [
         ['شاباش', 'Shābāsh', 'Well done!'],
@@ -592,8 +592,143 @@
       words: [['برف', 'barf', 'snow'], ['چوٹی', 'choṭī', 'peak'], ['آسمان', 'āsmān', 'sky'], ['ہمت', 'himmat', 'courage']],
       item: { kind: 'stamp', title: 'Five giants', text: 'K2, Nanga Parbat, Gasherbrum I, Broad Peak and Gasherbrum II: five of the fourteen highest mountains on Earth stand in Pakistan.', ref: 'Karakoram & Himalaya' },
       cameo: { id: 'samina', kind: 'climber', type: 'legend', name: 'Samina Baig', known: 'From Shimshal in Hunza. The first Pakistani woman to climb Mount Everest (2013) and K2 (2022).', gift: 'shield', giftText: 'Summit spirit — shield up!' }
+    },
+
+    /* ═════════════ THE FINALE · HOME FOR INDEPENDENCE DAY ═════════════ */
+    {
+      id: 'deosai', part: 1, name: 'Deosai, Land of Giants', native: 'دیوسائی', tr: 'Deosā’ī',
+      where: 'Gilgit-Baltistan', when: 'National park since 1993',
+      banner: 'One of the highest plateaus on Earth',
+      story: 'Beyond Skardu the road climbs onto Deosai, a vast high plain more than 4,000 metres up. For much of the year it lies under snow, but in summer it bursts into wildflowers and butterflies. It is one of the last homes of the Himalayan brown bear.',
+      ref: 'Deosai National Park',
+      sky: ['#3d8fe0', '#9ccff7', '#eef8ff'], sun: { x: 0.78, y: 0.16, r: 0.05, c: '#ffffff' }, clouds: 2,
+      far: { type: 'peaks', c1: '#a9b8c8', c2: '#7f93a8' },
+      lm: { name: 'deosai', x: 0.5, s: 1.1 },
+      ground: { road: '#a49378', line: '#efe6d0', side: '#7fbf6a', side2: '#74b25f', edge: '#8c7b62' },
+      props: ['flower', 'flower', 'rock', 'bush', 'flower'], weather: 'petals', wcol: '#fff3a8',
+      obst: { low: ['rock', 'stones from a marmot burrow'], high: ['banner', 'park gate banner'], full: ['boulder', 'granite boulder'] },
+      chaser: 'A gust of mountain wind', coin: 'silver', hat: 'pakol',
+      words: [['ریچھ', 'rīchh', 'bear'], ['گھاس', 'ghās', 'grass'], ['تتلی', 'titlī', 'butterfly'], ['ہوا', 'hawā', 'wind']],
+      item: { kind: 'stamp', title: 'Land of giants', text: 'Deosai is said to mean “land of giants”. The national park was created in 1993 to protect the Himalayan brown bear, and Sheosar Lake on the plateau lies more than 4,000 metres up.', ref: 'Skardu & Astore' },
+      cameo: { id: 'bear', kind: 'bear', type: 'mascot', name: 'The Deosai Brown Bear', known: 'Deosai is one of the last homes of the Himalayan brown bear. Rangers watch over the bears, and visitors must keep their distance.', gift: 'shield', giftText: 'Bear hug — shield up!' }
+    },
+    {
+      id: 'shandur', part: 1, name: 'Shandur Polo Festival', native: 'شندور', tr: 'Shandūr',
+      where: 'Between Chitral and Gilgit', when: 'Every July',
+      banner: 'The highest polo ground in the world',
+      story: 'On the Shandur Pass, about 3,700 metres up, teams from Chitral and Gilgit meet every summer for fast, freestyle mountain polo. Thousands of fans camp beside the lake, and drums and pipes play every time a goal is scored.',
+      ref: 'Shandur Pass',
+      sky: ['#2f86d8', '#8fd0ff', '#f3fbff'], sun: { x: 0.22, y: 0.16, r: 0.05, c: '#fffbe6' }, clouds: 1,
+      far: { type: 'mountains', c1: '#8a96a8', c2: '#6a7688' },
+      lm: { name: 'shandur', x: 0.5, s: 1.05 },
+      ground: { road: '#b8a07a', line: '#f4ead2', side: '#79b45f', side2: '#6ea755', edge: '#9a8462' },
+      props: ['tent', 'flag', 'rock', 'tent', 'flower'], weather: 'confetti', wcol: '#ffffff',
+      obst: { low: ['sandbag', 'hay bales'], high: ['banner', 'festival banner'], full: ['jeep', 'fans’ jeep'] },
+      chaser: 'A thundering herd of polo ponies', coin: 'rupee', hat: 'pakol',
+      words: [['چوگان', 'chaugān', 'polo'], ['میلہ', 'melā', 'festival'], ['ٹیم', 'ṭīm', 'team'], ['بلند', 'buland', 'high']],
+      item: { kind: 'stamp', title: 'Mountain polo', text: 'Polo has been played in Gilgit and Chitral for centuries; its old name, chaugan, comes from Persian. Mountain polo has fewer rules than the modern game, and the band strikes up for every goal.', ref: 'Chitral & Gilgit' },
+      cameo: { id: 'polo', kind: 'polo', type: 'mascot', name: 'The Polo Riders', known: 'Riders from Chitral and Gilgit gallop at full speed on sturdy mountain ponies in the oldest, wildest form of polo.', gift: 'dash', giftText: 'Gallop! Full speed!' }
+    },
+    {
+      id: 'swat', part: 1, name: 'Swat Valley', native: 'وادی سوات', tr: 'Wādī-e-Swāt',
+      where: 'Khyber Pakhtunkhwa', when: 'Nobel Peace Prize, 2014',
+      banner: 'The Switzerland of the East',
+      story: 'Green terraces, apple orchards and snowy peaks fill the Swat Valley, cut by the rushing Swat River. Long ago it was a centre of Gandhara art, and high above it, Malam Jabba is one of Pakistan’s ski resorts.',
+      ref: 'Swat District',
+      sky: ['#4a9fe6', '#a9d9ff', '#f2fbff'], sun: { x: 0.8, y: 0.18, r: 0.05, c: '#fffbe6' }, clouds: 2,
+      far: { type: 'peaks', c1: '#93a6b9', c2: '#6d8196' },
+      lm: { name: 'swat', x: 0.5, s: 1.05 },
+      ground: { road: '#55595f', line: '#ffffff', side: '#5ea55a', side2: '#549850', edge: '#3f4349' },
+      props: ['pine', 'apricot', 'poplar', 'hut', 'pine'], weather: 'petals', wcol: '#ffd3e2',
+      obst: { low: ['log', 'pine logs'], high: ['branch', 'apple boughs'], full: ['boulder', 'river boulder'] },
+      chaser: 'A splash of the rushing river', coin: 'rupee', hat: 'pakol',
+      words: [['سیب', 'sēb', 'apple'], ['ٹھنڈ', 'ṭhanḍ', 'cold'], ['اسکول', 'iskūl', 'school'], ['تعلیم', 'taʿlīm', 'education']],
+      item: { kind: 'stamp', title: 'The youngest Nobel winner', text: 'Malala Yousafzai grew up in Swat and spoke up for girls’ right to go to school. In 2014, aged 17, she became the youngest person ever to win the Nobel Peace Prize.', ref: 'Mingora, Swat' },
+      cameo: { id: 'malala', kind: 'reader', type: 'legend', name: 'Malala Yousafzai', known: 'Born in Swat in 1997. She spoke up for every girl’s right to learn, and in 2014 became the youngest Nobel Peace Prize winner ever.', gift: 'clear', giftText: 'Knowledge clears the way!' }
+    },
+    {
+      id: 'mehndi', part: 1, name: 'A Mehndi Night', native: 'مہندی کی رات', tr: 'Mehndī kī rāt',
+      where: 'A village in Punjab', when: 'Wedding season',
+      banner: 'Dhol, lights and henna: a Pakistani wedding!',
+      story: 'A Pakistani wedding can last for days. On the mehndi night, houses are wrapped in fairy lights, hands are painted with henna, and everyone dances to the booming dhol. Next comes the baraat, when the groom’s family arrives with music.',
+      ref: 'Punjab',
+      sky: ['#0b0f33', '#3b1f5e', '#8a3f6e'], stars: 2, moon: { x: 0.8, y: 0.15, r: 0.04 },
+      far: { type: 'trees', c1: '#2b2346', c2: '#1d1834' },
+      lm: { name: 'mehndi', x: 0.5, s: 1.1 },
+      ground: { road: '#6b4f4a', line: '#ffcf7a', side: '#4a3a52', side2: '#423348', edge: '#5a3e3a' },
+      props: ['lamp', 'stall', 'flower', 'pot', 'lamp'], weather: 'lights', wcol: '#ffcf7a',
+      obst: { low: ['crate', 'boxes of mithai'], high: ['wire', 'strings of fairy lights'], full: ['rickshaw', 'decorated rickshaw'] },
+      chaser: 'A dancing line of cousins', coin: 'rupee', hat: 'turban',
+      words: [['ڈھول', 'ḍhol', 'drum'], ['مہندی', 'mehndī', 'henna'], ['دلہن', 'dulhan', 'bride'], ['مٹھائی', 'miṭhāī', 'sweets']],
+      item: { kind: 'stamp', title: 'Shaadi traditions', text: 'Mehndi patterns are drawn with paste from the henna plant and fade after a week or two. Guests shower the couple with rose petals, and boxes of mithai, sweets like ladoo and barfi, are shared with everyone.', ref: 'Weddings across Pakistan' },
+      cameo: { id: 'dhol', kind: 'dhol', type: 'mascot', name: 'The Dhol Players', known: 'No Pakistani wedding is complete without the dhol, a big two-sided drum played with two sticks.', gift: 'double', giftText: 'Dhol beat — double rupees!', beat: true }
+    },
+    {
+      id: 'azadi', part: 1, name: 'Jashn-e-Azadi', native: 'جشن آزادی', tr: 'Jashn-e-Āzādī',
+      where: 'Islamabad', when: '14 August',
+      banner: 'Happy Independence Day, Pakistan!',
+      story: 'Every 14 August the whole country turns green and white. Flags fly from rooftops, bikes and rickshaws, the national anthem plays, and fireworks light up the sky over the Pakistan Monument in Islamabad. Every guest you met along the way is here to cheer you home!',
+      ref: 'Shakarparian, Islamabad',
+      sky: ['#050b2a', '#14306b', '#2d5a8e'], stars: 1, moon: { x: 0.16, y: 0.14, r: 0.035 },
+      far: { type: 'city', c1: '#14284a', c2: '#0d1c36', lit: 1 },
+      lm: { name: 'monument', x: 0.5, s: 1.1 },
+      ground: { road: '#4a4d57', line: '#ffffff', side: '#1e6b3a', side2: '#1a5f33', edge: '#e8e8e8' },
+      props: ['flag', 'lamp', 'flag', 'stall', 'flag'], weather: 'fireworks', wcol: '#ffffff',
+      obst: { low: ['crate', 'boxes of flags'], high: ['rope', 'green-and-white bunting'], full: ['rickshaw', 'flag-covered rickshaw'] },
+      chaser: 'A parade of honking rickshaws', coin: 'rupee', hat: 'jinnah',
+      words: [['جشن', 'jashn', 'celebration'], ['ترانہ', 'tarāna', 'anthem'], ['خوشی', 'khushī', 'joy'], ['اتحاد', 'ittehād', 'unity']],
+      item: { kind: 'stamp', title: 'Faith, Unity, Discipline', text: 'Pakistan’s motto, written on its emblem, is “Iman, Ittehad, Nazm”: Faith, Unity, Discipline. The Pakistan Monument (2007) is shaped like a blooming flower: four big petals for the four provinces and three smaller ones for the territories.', ref: 'Pakistan Monument, Islamabad' },
+      cameo: null, parade: true
     }
   ];
+
+  /* ───────────────────────── 3D SETTINGS ─────────────────────────
+   * track: rails · road · path
+   * ride:  the long thing you can dodge or run along (train, bus, truck, wagon, wall, hedge)
+   * side:  the roadside scenery style
+   * chase: what runs behind you after a stumble [kind, colour]
+   */
+  var SET3D = {
+    garden: ['path', 'hedge', 'garden', 'cloud', '#7ccf7c'],
+    ark: ['path', 'wagon', 'water', 'cloud', '#4a7ba8'],
+    fire: ['path', 'wall', 'city', 'guard', '#8e3b2f'],
+    zamzam: ['path', 'wall', 'desert', 'cloud', '#f0b45a'],
+    well: ['path', 'wagon', 'desert', 'cloud', '#d9a35f'],
+    sea: ['path', 'wall', 'waterwall', 'vehicle', '#c9a227'],
+    fish: ['path', 'wall', 'water', 'cloud', '#1f5f8b'],
+    cave: ['path', 'wall', 'rock', 'guard', '#6b5a8e'],
+    hira: ['path', 'wall', 'rock', 'roller', '#6f6a7d'],
+    kaaba: ['path', 'wagon', 'arches', 'animal', '#7f8c8d'],
+    makran: ['road', 'bus', 'water', 'animal', '#e74c3c'],
+    karachi: ['rails', 'train', 'city', 'vehicle', '#1e8449'],
+    makli: ['path', 'wall', 'ruins', 'cloud', '#d5d8dc'],
+    mohenjo: ['path', 'wall', 'ruins', 'roller', '#1b1b1f'],
+    derawar: ['path', 'truck', 'desert', 'vehicle', '#d35400'],
+    multan: ['road', 'bus', 'bazaar', 'animal', '#f4f4f4'],
+    lahorefort: ['path', 'hedge', 'garden', 'animal', '#2471a3'],
+    badshahi: ['path', 'wall', 'arches', 'cloud', '#d5d8dc'],
+    foodstreet: ['road', 'bus', 'bazaar', 'animal', '#7f8c8d'],
+    minar: ['road', 'bus', 'garden', 'cloud', '#1e8449'],
+    cricket: ['path', 'wall', 'stadium', 'roller', '#c0392b'],
+    sialkot: ['rails', 'train', 'village', 'roller', '#ffffff'],
+    rohtas: ['road', 'truck', 'ruins', 'vehicle', '#c0392b'],
+    khewra: ['rails', 'wagon', 'cave', 'roller', '#ffb3d1'],
+    islamabad: ['road', 'bus', 'city', 'animal', '#8a6a4a'],
+    nathiagali: ['road', 'bus', 'forest', 'animal', '#8a6a4a'],
+    taxila: ['rails', 'train', 'ruins', 'vehicle', '#2c3e50'],
+    khyber: ['road', 'truck', 'bazaar', 'animal', '#b98a55'],
+    hunza: ['road', 'truck', 'rock', 'animal', '#3a2a22'],
+    k2: ['path', 'wall', 'snow', 'cloud', '#ffffff'],
+    deosai: ['path', 'wall', 'meadow', 'cloud', '#e8f4ff'],
+    shandur: ['path', 'wall', 'meadow', 'animal', '#8a5a3a'],
+    swat: ['road', 'bus', 'forest', 'cloud', '#5dade2'],
+    mehndi: ['road', 'bus', 'village', 'guard', '#e67e22'],
+    azadi: ['road', 'bus', 'city', 'vehicle', '#1e8449']
+  };
+  SCENES.forEach(function (s) {
+    var c = SET3D[s.id] || ['path', 'wall', 'forest', 'cloud', '#ffffff'];
+    s.track = c[0]; s.ride = c[1]; s.side = c[2]; s.chase = [c[3], c[4]];
+  });
 
   /* ───────────────────────── SETS TO COLLECT ───────────────────────── */
   var PILLARS = [
@@ -611,6 +746,7 @@
     magnet: { name: ['Magnet', 'Magnet'], secs: 8, color: '#ff6b6b', text: 'Pulls coins to you' },
     double: { name: ['2× dinars', '2× rupees'], secs: 10, color: '#ffd24a', text: 'Every coin counts twice' },
     slow: { name: ['Sakinah (calm)', 'Chai break'], secs: 5, color: '#8fd3ff', text: 'Everything slows down' },
+    jump: { name: ['Swift sandals', 'Peshawari chappals'], secs: 10, color: '#2ecc71', text: 'Jump twice as high' },
     dash: { name: ['Desert wind', 'Express dash'], secs: 3.5, color: '#ff9f43', text: 'Smash through anything' }
   };
 
@@ -639,9 +775,9 @@
   var BADGES = [
     { id: 'word1', name: 'First word', text: 'Spell your first word' },
     { id: 'word25', name: 'Word collector', text: 'Spell 25 different words' },
-    { id: 'word120', name: 'Master of letters', text: 'Spell all 120 words' },
+    { id: 'wordAll', name: 'Master of letters', text: 'Spell all 140 words' },
     { id: 'wisdom10', name: 'Ten Wisdoms', text: 'Find all ten Wisdom scrolls' },
-    { id: 'stamp20', name: 'Historian', text: 'Find all twenty History stamps' },
+    { id: 'stamps', name: 'Historian', text: 'Find all twenty-five History stamps' },
     { id: 'guests', name: 'Guest list', text: 'Meet every cameo guest' },
     { id: 'tyre', name: 'Tyre pilot', text: 'Get launched by the Tyre Launchers' },
     { id: 'arm', name: 'Arm of iron', text: 'Win an arm-wrestling duel' },
@@ -649,6 +785,8 @@
     { id: 'skate', name: 'On the beat', text: 'Get roller skates from Ibra Raza' },
     { id: 'pillars', name: 'Five Pillars', text: 'Finish Part 1 · The Stories' },
     { id: 'summit', name: 'Roof of the world', text: 'Reach the top of K2' },
+    { id: 'roof', name: 'Rooftop runner', text: 'Run along the roof of a train, bus or truck' },
+    { id: 'azadi', name: 'Pakistan Zindabad', text: 'Reach the Jashn-e-Azadi finale' },
     { id: 'flawless', name: 'Sure-footed', text: 'Finish a scene without a single bump' }
   ];
 
@@ -679,20 +817,27 @@
     'Two Pakistanis have won Nobel Prizes: Abdus Salam (Physics, 1979) and Malala Yousafzai (Peace, 2014).',
     'Arfa Karim of Pakistan became a Microsoft Certified Professional in 2004, aged nine.',
     'Jahangir Khan won 555 squash matches in a row.',
-    'Urdu is Pakistan’s national language; dozens of other languages are spoken too, including Punjabi, Sindhi, Pashto and Balochi.'
+    'Urdu is Pakistan’s national language; dozens of other languages are spoken too, including Punjabi, Sindhi, Pashto and Balochi.',
+    'The first railway in what is now Pakistan opened in 1861, between Karachi and Kotri.',
+    'Pakistan’s national anthem was written by Hafeez Jalandhari and set to music by Ahmed G. Chagla.',
+    'Pakistan has won the field hockey World Cup four times, more than any other country.',
+    'Pakistan’s flag was adopted on 11 August 1947, three days before independence.',
+    'Pakistani trucks are famous worldwide for “truck art”: every panel hand-painted with flowers, birds and poetry.'
   ];
 
   /* ───────────────────────── ON-SCREEN TEXT ───────────────────────── */
   var STR = {
-    title: 'Quran Runner', subtitle: 'Pakistan Journey',
-    tagline: 'From the First Garden to the roof of the world',
-    blurb: '30 scenes · about 30 minutes · 120 words in Arabic and Urdu',
+    title: 'Pakistan Runner', subtitle: 'Stories · History · Heroes',
+    tagline: 'From the First Garden to K2, and home for Independence Day',
+    blurb: '35 scenes · about 30 minutes · 140 words in Arabic and Urdu',
     newGame: 'Start the journey', cont: 'Continue', jumpPk: 'Start at Part 2 · Pakistan',
     scenes: 'Scenes', album: 'Album', shop: 'Shop', howto: 'How to play',
     howtoText: [
       'Swipe or press ← → to change lane.',
       'Swipe up or press ↑ / Space to jump low things.',
-      'Swipe down or press ↓ to slide under high things.',
+      'Swipe down or press ↓ to roll under high things (in the air, it drops you fast).',
+      'Run up a ramp to race along the roofs of trains, buses and trucks.',
+      'Bump into the side of something and you stumble: twice in a row costs a heart.',
       'Catch the letters in order to spell each word.',
       'Find the hidden scroll or stamp in every scene.',
       'Three bumps and you restart the scene — your coins are safe.'
@@ -701,8 +846,8 @@
     resume: 'Resume', quit: 'Back to title', paused: 'Paused',
     sceneDone: 'Scene complete!', failTitle: 'Caught!', failText: 'Catch your breath and try the scene again. Your coins and words are safe.',
     part1Done: 'Part 1 complete', part1Text: 'You have crossed all ten stories and reached the Kaaba. Now the sea road leads east — to Pakistan.',
-    endTitle: 'You reached the roof of the world!',
-    endText: 'From the First Garden to the summit of K2: thirty scenes, ten wisdoms and 4,500 years of history. Shābāsh!',
+    endTitle: 'Pakistan Zindabad! You made it home!',
+    endText: 'From the First Garden to the top of K2 and the fireworks of Jashn-e-Azadi: thirty-five scenes, ten wisdoms and 4,500 years of history. Shābāsh!',
     armTitle: 'Arm wrestle!', armHint: 'Tap, click or press Space as fast as you can!',
     armWin: 'You win! +150', armLose: 'So close! The crowd still cheers.',
     credits: 'A fan-made learning game. Cameo guests are friendly tributes to public figures, drawn as cartoons; nobody named here made or endorsed this game.'
@@ -712,7 +857,7 @@
     letters: LETTERS, alphabet: ALPHABET, numerals: NUMERALS,
     parts: PARTS, scenes: SCENES, pillars: PILLARS,
     powerups: POWERUPS, shop: SHOP, badges: BADGES, facts: FACTS, str: STR,
-    sceneSeconds: 60
+    sceneSeconds: 52
   };
 
   // Lets tools/check-data.js load this file under Node.

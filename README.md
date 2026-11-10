@@ -1,12 +1,17 @@
 # GamesforSrini
 
-## Quran Runner — Pakistan Journey
+## Pakistan Runner
 
-A three-lane running game that teaches Arabic and Urdu words while you run through
-30 scenes: ten stories from the Quran, then twenty stops across Pakistan, from the
-Arabian Sea to the top of K2. A full run takes about 30 minutes.
+A 3D running game in the style of Subway Surfers. You run along train tracks,
+roads and desert paths, dodge, jump, roll, ride ramps up onto the roofs of trains,
+buses and jingle trucks, and spell Arabic and Urdu words as you go.
 
-**Play it:** open `quran-runner/index.html` in a browser. No install, no build step.
+There are 35 scenes of about 52 seconds each, roughly 30 minutes in all: ten stories
+from the Quran, then twenty-five stops across Pakistan, from the Arabian Sea to the
+top of K2 and home to Islamabad for the Independence Day fireworks.
+
+**Play it:** open `pakistan-runner/index.html` in a browser. No install, no build step,
+no internet needed. The browser must support WebGL (every modern browser does).
 Some browsers block saving when a page is opened straight from disk; to keep your
 progress, serve the folder instead:
 
@@ -14,20 +19,37 @@ progress, serve the folder instead:
 python3 -m http.server 8000
 ```
 
-Then open `http://localhost:8000/quran-runner/`.
+Then open `http://localhost:8000/pakistan-runner/`.
 
 ### How to play
 
 | Action | Keyboard | Touch |
 |---|---|---|
 | Change lane | ← → (or A / D) | Swipe left / right |
-| Jump low things | ↑, W or Space | Swipe up or tap |
-| Slide under high things | ↓ or S | Swipe down |
+| Jump | ↑, W or Space | Swipe up or tap |
+| Roll under things (in the air: drop fast) | ↓ or S | Swipe down |
 | Pause | P or Esc | Pause button |
 
+- **Ramps** lead up onto the roofs of trains, buses, trucks, wagons and walls. Run along
+  the roofs and hop from one to the next.
+- **Side bumps:** changing lane into the side of something makes you stumble, and the
+  chaser appears behind you. Two stumbles close together cost a heart.
+- **Head-on bumps** cost a heart. Three hearts gone and you restart the scene. Coins and
+  words are never lost.
 - Catch the glowing letters in order to spell each word.
 - Find the hidden **Wisdom scroll** (Part 1) or **History stamp** (Part 2) in every scene.
-- Three bumps and you restart the scene. Coins and words are never lost.
+
+### Power-ups
+
+| Part 1 | Part 2 | What it does |
+|---|---|---|
+| Crescent shield | Crescent shield | Blocks one bump |
+| Flying carpet | Tyre launch | Soar over everything and collect sky coins |
+| Magnet | Magnet | Pulls coins to you |
+| 2× dinars | 2× rupees | Every coin counts twice |
+| Sakinah (calm) | Chai break | Everything slows down |
+| Desert wind | Express dash | Smash through anything |
+| Swift sandals | Peshawari chappals | Jump twice as high |
 
 ### The route
 
@@ -44,7 +66,7 @@ Then open `http://localhost:8000/quran-runner/`.
 9. The Mountain of Light (Hira)
 10. The Kaaba
 
-**Part 2 · Pakistan** (Urdu words, twenty History stamps, cameo guests)
+**Part 2 · Pakistan** (Urdu words, twenty-five History stamps, roadside guests)
 
 | # | Stop | Key date | Roadside guest |
 |---|---|---|---|
@@ -68,14 +90,18 @@ Then open `http://localhost:8000/quran-runner/`.
 | 28 | Peshawar & the Khyber Pass | thousands of years | Jahangir Khan |
 | 29 | The Karakoram Highway & Hunza | 1979 | Zenith Irfan |
 | 30 | K2, the Roof of the World | 31 July 1954 | Samina Baig |
+| 31 | Deosai, Land of Giants | national park since 1993 | The Deosai Brown Bear |
+| 32 | Shandur Polo Festival | every July | The Polo Riders |
+| 33 | Swat Valley | Nobel Peace Prize, 2014 | Malala Yousafzai |
+| 34 | A Mehndi Night | wedding season | The Dhol Players |
+| 35 | Jashn-e-Azadi | 14 August | **every guest lines the road**, under fireworks |
 
 Four guests change how the game plays:
 
-- **The Tyre Launchers** launch you into the sky on a spinning tyre. In Part 2 the
-  flying power-up is a tyre launch instead of a flying carpet.
-- **Mr Greedy** starts a samosa feast: the whole road fills with samosas.
-- **Ibra Raza**, the roller-skating waiter, skates alongside you and hands you
-  roller skates: a fast, unstoppable glide over a trail of coins, and the beat speeds up.
+- **The Tyre Launchers** launch you into the sky on a spinning tyre.
+- **Mr Greedy** fills the road with samosas.
+- **Ibra Raza**, the roller-skating waiter, skates alongside you and hands you roller
+  skates: a fast, unstoppable glide over a trail of coins while the beat speeds up.
 - **The Arm Wrestlers** start a tap-as-fast-as-you-can arm-wrestling duel.
 
 ### Content rules
@@ -83,8 +109,9 @@ Four guests change how the game plays:
 - **Nobody holy is shown.** Part 1 scenes are places, objects, plants and animals only.
 - **No name of God is ever a letter you catch.**
 - **Verses are given by reference** and retold in simple English; no verse text is quoted.
-- **Cameo guests appear only in Part 2**, drawn as simple cartoons. Each is described
-  by what they are publicly known for, and the game puts no invented words in their mouths.
+- **Cameo guests appear only in Part 2**, drawn as simple cartoon standees. Each is
+  described by what they are publicly known for, and the game puts no invented words
+  in their mouths.
 - This is a fan-made learning game. Nobody named in it made or endorsed it.
 
 **Have someone who reads Arabic and Urdu, and who knows the history, look it over
@@ -95,11 +122,13 @@ but a second pair of eyes is worth it.
 
 | File | What it holds |
 |---|---|
-| `quran-runner/js/data.js` | All content: scenes, words, stories, facts, cameos, shop, badges, on-screen text |
-| `quran-runner/js/art.js` | Every picture, drawn with canvas shapes (no image files) |
-| `quran-runner/js/game.js` | The engine: running, spawning, collisions, screens, saving |
-| `quran-runner/js/audio.js` | Sound effects and the background beat (full, drum-only or off) |
-| `tools/check-data.js` | Checks `data.js` for gaps and spelling-set mistakes |
+| `pakistan-runner/js/data.js` | All content: scenes, words, stories, facts, guests, shop, badges, on-screen text, and each scene's 3D settings |
+| `pakistan-runner/js/world.js` | The 3D world: track, scenery, trains and obstacles, the runner, chasers, weather |
+| `pakistan-runner/js/art.js` | 2D pictures: the painted skyline behind the 3D world, guest standees, icons |
+| `pakistan-runner/js/game.js` | The engine: running, jumping, rolling, roofs, spawning, collisions, screens, saving |
+| `pakistan-runner/js/audio.js` | Sound effects and the background beat (full, drum-only or off) |
+| `pakistan-runner/js/vendor/three.min.js` | The three.js 3D library (r149, MIT licence) |
+| `tools/check-data.js` | Checks `data.js` for gaps, wrong letters and missing models |
 
 To change a word, a fact or a guest, edit `data.js` only, then run the checker:
 
@@ -109,5 +138,7 @@ node tools/check-data.js
 
 ### Testing shortcuts
 
-- `quran-runner/index.html?scene=14` opens scene 14 directly.
-- `quran-runner/index.html?scene=14&secs=10` shortens every scene to 10 seconds.
+- `pakistan-runner/index.html?scene=14` opens scene 14 directly.
+- `pakistan-runner/index.html?scene=14&secs=10` shortens every scene to 10 seconds.
+- `pakistan-runner/index.html?low=1` turns off shadows for slower devices
+  (phones and tablets get this automatically; `?low=0` turns shadows back on).
