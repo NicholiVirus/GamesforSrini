@@ -62,11 +62,12 @@
   }
   function clearObjs() { G.objs.forEach(function (o) { Wd.remove(o); }); G.objs = []; }
   function add(o) { G.objs.push(o); Wd.add(o); return o; }
-  function resetRun() {
+  function resetRun(carry) {
     clearObjs();
+    var keepFx = carry ? G.fx : freshFx(), keepMax = carry ? G.max : {}, lane = carry ? G.p.lane : 0;
     G.st = 0; G.dist = 0; G.nextChunk = 14; G.chunk = 0; G.mv = 0;
-    G.maxHearts = 3 + save.upg.heart; G.hearts = G.maxHearts; G.bumps = 0; G.sceneCoins = 0; G.score = 0;
-    G.p = freshPlayer(); G.fx = freshFx(); G.max = {};
+    G.maxHearts = 3 + save.upg.heart; G.hearts = G.maxHearts; G.bumps = 0; G.sceneCoins = 0; if (!carry) G.score = 0;
+    G.p = freshPlayer(); G.p.lane = lane; G.p.x = lane * LANE; G.fx = keepFx; G.max = keepMax;
     G.wi = 0; G.li = 0; G.spelled = {}; G.round = 0;
     G.item = 0; G.itemAt = 24 * SECS / 60; G.itemTries = 0; G.gotItem = false;
     G.cameo = 0; G.met = {}; G.skate = 0; G.gate = false; G.calm = 0; G.dip = 0; G.shake = 0; G.paraded = false;
@@ -144,7 +145,6 @@
     if (save.badges[id]) return;
     var b = D.badges.filter(function (x) { return x.id === id; })[0]; if (!b) return;
     save.badges[id] = true; persist();
-    if (G.state === 'run') toast('Badge unlocked<small>' + esc(b.name) + '</small>', 'gold', 2200);
   }
   function powerSecs(kind) { return D.powerups[kind].secs * (1 + 0.2 * save.upg.power); }
   function activate(kind, quiet) {
@@ -166,7 +166,7 @@
     if (!first) { toast(esc(cm.name) + '<small>+25 ' + esc(G.part.coinName) + '</small>', 'gold', 1400); earn(25); return; }
     var card = $('cameoCard');
     card.innerHTML = '<div class="k">' + (cm.type === 'mascot' ? 'Legend of the place' : cm.type === 'legend' ? 'Pakistani legend' : 'Cameo') + '</div><div class="n">' + esc(cm.name) + '</div><div>' + esc(cm.known) + '</div><div class="g">' + esc(cm.giftText) + '</div>';
-    card.classList.remove('hidden'); cameoTimer = 7; G.score += 100;
+    card.classList.remove('hidden'); cameoTimer = 3.5; G.score += 100;
     if (cm.beat) Au.boost(10);
     switch (cm.gift) {
       case 'fly': activate('fly', true); if (cm.id === 'tyres') award('tyre'); break;
@@ -290,7 +290,7 @@
 
     var p = G.p, fx = G.fx, i, o;
     G.st += dt;
-    var base = 15 + G.idx * 0.24 + Math.min(2.5, G.st / 20);
+    var base = 20 + G.idx * 0.3 + Math.min(4, G.st / 12);
     G.speed = base * (fx.slow > 0 ? 0.6 : 1) * (fx.dash > 0 ? 1.6 : 1) * (G.dip > 0 ? 0.6 : 1);
     var mv = G.mv = G.speed * dt; G.dist += mv; G.score += mv;
 
@@ -432,16 +432,30 @@
     $('i-run').onclick = startRun; $('i-back').onclick = openTitle;
     show('s-intro');
   }
+  function flow(idx, carry) { // jump straight into a scene, no cards in between
+    Au.unlock(); setScene(idx); resetRun(carry); save.last = idx; save.played = true; persist();
+    G.state = 'run'; hudCache = {}; show(null); updateHud(0);
+    $('sceneLabel').textContent = 'Scene ' + (idx + 1) + ' · ' + G.sc.name;
+    $('cameoCard').classList.add('hidden');
+    toast('<span class="native" dir="rtl">' + esc(G.sc.native) + '</span>' + esc(G.sc.name) + '<small>' + esc(G.sc.banner) + '</small>', 'gold', 2200);
+    var o = $('fxOverlay'); o.classList.remove('flash'); void o.offsetWidth; o.classList.add('flash');
+    Au.music(true);
+  }
   function startRun() {
     Au.unlock(); if (G.st > 0 || G.state === 'fail') resetRun();
     G.state = 'run'; save.played = true; hudCache = {}; show(null); updateHud(0);
     $('sceneLabel').textContent = 'Scene ' + (G.idx + 1) + ' · ' + G.sc.name;
     $('cameoCard').classList.add('hidden');
-    if (count(save.done) === 0) { $('hint').innerHTML = esc(S.howtoText[0]) + '<br>' + esc(S.howtoText[1]) + '<br>' + esc(S.howtoText[2]); $('hint').classList.remove('hidden'); hintTimer = 7; }
+    if (false) { $('hint').innerHTML = esc(S.howtoText[0]) + '<br>' + esc(S.howtoText[1]) + '<br>' + esc(S.howtoText[2]); $('hint').classList.remove('hidden'); hintTimer = 7; }
     Au.music(true);
   }
   function completeScene() {
-    var sc = G.sc; G.state = 'outro'; Au.music(false); Au.sfx('gate');
+    var sc = G.sc; Au.sfx('gate');
+    save.done[sc.id] = true; save.last = Math.min(N - 1, G.idx + 1); if (G.score > save.best) save.best = Math.floor(G.score);
+    if (G.bumps === 0) award('flawless'); if (G.idx === 9) award('pillars'); if (sc.id === 'k2') award('summit'); if (G.idx === N - 1) award('azadi');
+    persist();
+    if (G.idx < N - 1) { flow(G.idx + 1, true); return; }
+    G.state = 'outro'; Au.music(false);
     save.done[sc.id] = true; save.last = Math.min(N - 1, G.idx + 1); if (G.score > save.best) save.best = Math.floor(G.score);
     if (G.bumps === 0) award('flawless'); if (G.idx === 9) award('pillars'); if (sc.id === 'k2') award('summit'); if (G.idx === N - 1) award('azadi');
     persist();
@@ -471,7 +485,9 @@
     } else openIntro(G.idx + 1);
   }
   function fail() {
-    G.state = 'fail'; Au.music(false); Au.sfx('lose'); persist(); G.chase.show = true; G.chase.d = 3.2;
+    Au.sfx('lose'); persist();
+    G.state = 'fail'; setTimeout(function () { if (G.state === 'fail') { flow(G.idx, false); toast('Caught! Try again<small>' + esc(G.sc.name) + '</small>', 'bad', 1600); } }, 900);
+    return;
     message('<div class="eyebrow">Scene ' + (G.idx + 1) + ' · ' + esc(G.sc.name) + '</div><h2>' + esc(S.failTitle) + '</h2><p><b>' + esc(G.sc.chaser) + '</b> caught up with you.</p><p class="muted">' + esc(S.failText) + '</p>',
       S.retry, function () { resetRun(); startRun(); }, S.quit, openTitle);
   }
@@ -517,7 +533,7 @@
     html += '<p style="text-align:center"><button id="l-reset" class="btn ghost">Reset all progress</button></p>';
     listShell(S.scenes, html);
     $('l-reset').onclick = function () { if (window.confirm('Erase all coins, words, stamps and badges and start again?')) { save = freshSave(); Au.setMode(save.sound); persist(); openTitle(); } };
-    Array.prototype.forEach.call($('listCard').querySelectorAll('button.tile'), function (b) { b.onclick = function () { openIntro(+b.getAttribute('data-i')); }; });
+    Array.prototype.forEach.call($('listCard').querySelectorAll('button.tile'), function (b) { b.onclick = function () { flow(+b.getAttribute('data-i')); }; });
   }
   var albumTab = 'wisdoms';
   function openAlbum() {
@@ -629,11 +645,11 @@
   cv.addEventListener('pointercancel', function () { touch = null; });
   $('s-arm').addEventListener('pointerdown', function (e) { e.preventDefault(); Au.unlock(); armTap(); });
   $('btnPause').onclick = pause; $('p-resume').onclick = resume;
-  $('p-restart').onclick = function () { resetRun(); G.state = 'intro'; startRun(); };
+  $('p-restart').onclick = function () { flow(G.idx); };
   $('p-quit').onclick = openTitle; $('p-sound').onclick = cycleSound; $('b-sound').onclick = cycleSound;
-  $('b-new').onclick = function () { Au.unlock(); openIntro(0); };
-  $('b-pk').onclick = function () { Au.unlock(); openIntro(10); };
-  $('b-continue').onclick = function () { Au.unlock(); openIntro(unlocked(save.last) ? save.last : 0); };
+  $('b-new').onclick = function () { flow(0); };
+  $('b-pk').onclick = function () { flow(10); };
+  $('b-continue').onclick = function () { flow(unlocked(save.last) ? save.last : 0); };
   $('b-scenes').onclick = openScenes; $('b-album').onclick = openAlbum; $('b-shop').onclick = openShop; $('b-how').onclick = openHow;
   document.addEventListener('visibilitychange', function () { if (document.hidden) pause(); });
   window.addEventListener('blur', pause);
@@ -669,7 +685,7 @@
   requestAnimationFrame(frame);
 
   // Small hooks used by the automated tests in tools/.
-  QR.debug = { G: G, add: add, ride: ride, ob: ob, coins: coins, stumble: stumble, showChase: showChase, save: function () { return save; }, act: act, step: update, startRun: startRun, openIntro: openIntro, cameo: cameoEvent, activate: activate, armTap: armTap, startArm: startArm, render: function () { Wd.frame(viewState(), 0.016); },
+  QR.debug = { G: G, flow: flow, add: add, ride: ride, ob: ob, coins: coins, stumble: stumble, showChase: showChase, save: function () { return save; }, act: act, step: update, startRun: startRun, openIntro: openIntro, cameo: cameoEvent, activate: activate, armTap: armTap, startArm: startArm, render: function () { Wd.frame(viewState(), 0.016); },
     fast: function (secs, noRender) { for (var i = 0; i < secs * 60 && G.state === 'run'; i++) { update(1 / 60); Wd.frame(viewState(), 1 / 60, true); } if (!noRender) Wd.frame(viewState(), 0.001); } };
 })();
 

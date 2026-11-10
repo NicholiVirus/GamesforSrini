@@ -79,6 +79,8 @@ canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: blo
 #cameoCard .n { font-size: 16px; font-weight: 800; }
 #cameoCard .g { margin-top: 4px; font-weight: 800; color: #b8590c; }
 #fxOverlay { position: fixed; inset: 0; pointer-events: none; transition: box-shadow 0.3s, background 0.3s; }
+#fxOverlay.flash { animation: flash 0.7s ease-out; }
+@keyframes flash { from { background: rgba(255, 255, 255, 0.85); } to { background: rgba(255, 255, 255, 0); } }
 #fxOverlay.slow { background: rgba(120, 200, 255, 0.13); }
 #fxOverlay.danger { box-shadow: inset 0 0 120px 20px rgba(255, 0, 40, 0.35); animation: pulse 1.2s infinite; }
 @keyframes pulse { 50% { box-shadow: inset 0 0 90px 10px rgba(255, 0, 40, 0.22); } }
