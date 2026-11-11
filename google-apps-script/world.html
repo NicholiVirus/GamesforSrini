@@ -61,7 +61,7 @@
     else {
       if (o.e) p.emissive = new T.Color(o.e);
       if (o.emap) { p.emissive = new T.Color('#ffffff'); p.emissiveMap = o.emap; }
-      m = new T.MeshLambertMaterial(p);
+      if (low) m = new T.MeshLambertMaterial(p); else { p.roughness = o.rough == null ? 0.72 : o.rough; p.metalness = o.metal || 0.04; m = new T.MeshStandardMaterial(p); }
     }
     return (matCache[key] = curve(m));
   }
@@ -89,7 +89,7 @@
    * draws a whole tree or stall in one or two calls instead of twenty.
    * Plain-coloured parts share one vertex-coloured material. */
   var vcMat = null;
-  function VC() { return vcMat || (vcMat = curve(new T.MeshLambertMaterial({ vertexColors: true }))); }
+  function VC() { return vcMat || (vcMat = curve(low ? new T.MeshLambertMaterial({ vertexColors: true }) : new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.72, metalness: 0.04 }))); }
   function mergeGeos(list, withColor) {
     var total = 0; list.forEach(function (g) { total += g.attributes.position.count; });
     var pos = new Float32Array(total * 3), nor = new Float32Array(total * 3), uv = new Float32Array(total * 2), col = withColor ? new Float32Array(total * 3) : null, o = 0;
@@ -109,7 +109,7 @@
     var buckets = {}, drop = [];
     g.traverse(function (o) {
       if (!o.isMesh || o.userData.keep || Array.isArray(o.material)) return;
-      var mt = o.material, plain = mt.isMeshLambertMaterial && !mt.map && !mt.transparent && mt.side !== T.DoubleSide && (!mt.emissive || mt.emissive.getHex() === 0) && !mt.emissiveMap;
+      var mt = o.material, plain = (mt.isMeshLambertMaterial || mt.isMeshStandardMaterial) && !mt.map && !mt.transparent && mt.side !== T.DoubleSide && (!mt.emissive || mt.emissive.getHex() === 0) && !mt.emissiveMap;
       var key = plain ? 'vc' : mt.uuid;
       var geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
       geo.applyMatrix4(o.matrixWorld);
@@ -134,7 +134,7 @@
     if (texCache[key]) return texCache[key];
     var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
     draw(cv.getContext('2d'), w, h);
-    var t = new T.CanvasTexture(cv); t.anisotropy = 4;
+    var t = new T.CanvasTexture(cv); t.anisotropy = 4; t.encoding = T.sRGBEncoding;
     if (wrap) t.wrapS = t.wrapT = T.RepeatWrapping;
     return (texCache[key] = t);
   }
@@ -205,7 +205,7 @@
   var repCache = {};
   function reptex(base, key, rx) { // the same picture, repeated rx times across a face
     var k = key + '|' + rx; if (repCache[k]) return repCache[k];
-    var t = new T.CanvasTexture(base.image); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(rx, 1); t.anisotropy = 4;
+    var t = new T.CanvasTexture(base.image); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(rx, 1); t.anisotropy = 4; t.encoding = T.sRGBEncoding;
     return (repCache[k] = t);
   }
 
@@ -623,7 +623,7 @@
     if (glyphs[ch]) return glyphs[ch];
     var cv = document.createElement('canvas'); cv.width = cv.height = 160;
     Art.letter(cv.getContext('2d'), ch, 80, 80, 36, 0, FONT);
-    var t = new T.CanvasTexture(cv); return (glyphs[ch] = t);
+    var t = new T.CanvasTexture(cv); t.encoding = T.sRGBEncoding; return (glyphs[ch] = t);
   }
   var letterMat = null;
   W.setLetter = function (ch) { if (letterMat && ch) letterMat.map = glyphTex(ch); };
@@ -727,7 +727,7 @@
   }
   function standee(cm) {
     var g = grp(), cv = document.createElement('canvas'); cv.width = 360; cv.height = 420;
-    var tex = new T.CanvasTexture(cv);
+    var tex = new T.CanvasTexture(cv); tex.encoding = T.sRGBEncoding;
     part(g, pln(3.6, 4.2, true), M('#ffffff', { map: tex, basic: true, ds: true, at: 0.08 }), 0, 0.26, 0);
     part(g, cyl(1.3, 1.4, 0.3, 18), M('#01411c'), 0, 0.15, 0); part(g, cyl(1.42, 1.42, 0.08, 18), M('#ffffff'), 0, 0.3, 0);
     var tag = ctex('tag' + cm.id, 512, 96, function (c, w, h) {
@@ -814,13 +814,17 @@
 
   W.init = function (canvas, opts) {
     opts = opts || {}; low = !!opts.low;
+    // Simulator-style look: correct colour handling, filmic tone mapping, soft
+    // shadows and slightly glossy materials (plain matte ones on slower devices).
+    if (T.ColorManagement) T.ColorManagement.legacyMode = false;
     R = new T.WebGLRenderer({ canvas: canvas, antialias: !low, powerPreference: 'high-performance' });
+    R.outputEncoding = T.sRGBEncoding; R.toneMapping = T.ACESFilmicToneMapping; R.toneMappingExposure = 1.0;
     R.shadowMap.enabled = !low; R.shadowMap.type = T.PCFSoftShadowMap;
     S = new T.Scene();
     CAM = new T.PerspectiveCamera(62, 1, 0.1, 500);
     HEMI = new T.HemisphereLight(0xffffff, 0x445544, 0.8); S.add(HEMI);
     SUN = new T.DirectionalLight(0xffffff, 0.8); SUN.castShadow = !low;
-    SUN.shadow.mapSize.set(1024, 1024);
+    SUN.shadow.mapSize.set(2048, 2048); SUN.shadow.radius = 3;
     var sc2 = SUN.shadow.camera; sc2.left = -16; sc2.right = 16; sc2.top = 22; sc2.bottom = -22; sc2.near = 1; sc2.far = 80; SUN.shadow.bias = -0.0006;
     S.add(SUN); S.add(SUN.target);
     S.fog = new T.Fog(0xffffff, 40, 125);
@@ -881,7 +885,7 @@
     Art.sky(c, w, h, hy, sc, 0.5); Art.far(c, w, hy, sc, 0.5); Art.landmark(c, w, h, hy, sc, 0.5);
     c.fillStyle = sc.sky[2]; c.fillRect(0, hy, w, h - hy);
     if (backdropTex) backdropTex.dispose();
-    backdropTex = new T.CanvasTexture(backdropCv); S.background = backdropTex;
+    backdropTex = new T.CanvasTexture(backdropCv); backdropTex.encoding = T.sRGBEncoding; S.background = backdropTex;
   }
   function trackTex(s) {
     var g = s.ground, kind = s.track;
@@ -911,8 +915,8 @@
   W.setScene = function (scene) {
     sc = scene; night = !!sc.stars || lum(sc.sky[0]) < 0.22;
     S.fog.color.set(sc.sky[2]); S.fog.near = 34; S.fog.far = sc.weather === 'snow' || sc.clouds >= 3 ? 95 : 125;
-    HEMI.color.set(night ? '#9fb2e6' : shade(sc.sky[1], 0.2)); HEMI.groundColor.set(shade(sc.ground.side, -0.15)); HEMI.intensity = night ? 0.62 : 0.78;
-    SUN.color.set(night ? '#c4d0ff' : (sc.sun ? sc.sun.c : '#fff4e0')); SUN.intensity = night ? 0.42 : 0.82;
+    HEMI.color.set(night ? '#9fb2e6' : shade(sc.sky[1], 0.2)); HEMI.groundColor.set(shade(sc.ground.side, -0.15)); HEMI.intensity = night ? 0.6 : 0.85;
+    SUN.color.set(night ? '#c4d0ff' : (sc.sun ? sc.sun.c : '#fff4e0')); SUN.intensity = night ? 0.7 : 1.9;
     trackT = trackTex(sc); sideT = sideTex(sc);
     track.material = M('#ffffff', { map: trackT });
     sideL.material = sideR.material = M('#ffffff', { map: sideT });
