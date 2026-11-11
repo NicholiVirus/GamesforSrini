@@ -65,7 +65,7 @@
     clearObjs();
     var keepFx = carry ? G.fx : freshFx(), keepMax = carry ? G.max : {}, lane = carry ? G.p.lane : 0;
     G.st = 0; G.dist = 0; G.nextChunk = 14; G.chunk = 0; G.mv = 0;
-    G.maxHearts = 3 + save.upg.heart; G.hearts = G.maxHearts; G.bumps = 0; G.sceneCoins = 0; if (!carry) G.score = 0;
+    G.maxHearts = 3 + save.upg.heart; if (!carry || !(G.hearts > 0)) G.hearts = G.maxHearts; G.bumps = 0; G.sceneCoins = 0; if (!carry) G.score = 0;
     G.p = freshPlayer(); G.p.lane = lane; G.p.x = lane * LANE; G.fx = keepFx; G.max = keepMax;
     G.wi = 0; G.li = 0; G.spelled = {}; G.round = 0;
     G.item = 0; G.itemAt = 24 * SECS / 60; G.itemTries = 0; G.gotItem = false;
@@ -485,7 +485,7 @@
   }
   function fail() {
     Au.sfx('lose'); persist();
-    G.state = 'fail'; setTimeout(function () { if (G.state === 'fail') { flow(G.idx, false); toast('Caught! Try again<small>' + esc(G.sc.name) + '</small>', 'bad', 1600); } }, 900);
+    G.state = 'fail'; setTimeout(function () { if (G.state === 'fail') { save.last = 0; persist(); flow(0, false); toast('Caught! Back to the start<small>' + esc(G.sc.name) + '</small>', 'bad', 2200); } }, 900);
     return;
     message('<div class="eyebrow">Scene ' + (G.idx + 1) + ' · ' + esc(G.sc.name) + '</div><h2>' + esc(S.failTitle) + '</h2><p><b>' + esc(G.sc.chaser) + '</b> caught up with you.</p><p class="muted">' + esc(S.failText) + '</p>',
       S.retry, function () { resetRun(); startRun(); }, S.quit, openTitle);
