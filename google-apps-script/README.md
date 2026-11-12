@@ -4,7 +4,15 @@ These files run the game as a Google Apps Script **web app**: a link anyone can 
 to play, hosted by Google. They are built from `pakistan-runner/` by
 `node tools/build-gas.js`, so change the originals and rebuild rather than editing here.
 
-## Set it up in the browser (no tools needed)
+## Quickest set-up: two files
+
+1. Go to [script.google.com](https://script.google.com) and click **New project**.
+2. Paste `two-file/Code.gs` over everything in `Code.gs`.
+3. Click **+ → HTML**, name it **Index**, and paste in all of `two-file/Index.html` (about 900 KB).
+4. **Save**, then **Deploy → New deployment → Web app**, *Execute as* **Me**, *Who has access* **Anyone**, **Deploy**.
+5. Open the **Web app URL** to play.
+
+## Set it up in the browser with separate files
 
 1. Go to [script.google.com](https://script.google.com) and click **New project**.
 2. Rename the project to **Pakistan Runner**.

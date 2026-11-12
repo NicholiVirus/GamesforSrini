@@ -57,3 +57,17 @@ fs.writeFileSync(path.join(out, 'appsscript.json'), JSON.stringify({
   webapp: { executeAs: 'USER_DEPLOYING', access: 'ANYONE_ANONYMOUS' }
 }, null, 2) + '\n');
 fs.readdirSync(out).forEach((f) => console.log(f.padEnd(16), (fs.statSync(path.join(out, f)).size / 1024).toFixed(0) + ' KB'));
+
+// Two-file version for copy-pasting: one Code.gs and one Index.html with everything inside.
+const one = path.join(out, 'two-file'); fs.mkdirSync(one, { recursive: true });
+let full = fs.readFileSync(path.join(out, 'index.html'), 'utf8').replace(/<\?!= include\('(\w+)'\); \?>/g, (m, n) => fs.readFileSync(path.join(out, n + '.html'), 'utf8'));
+fs.writeFileSync(path.join(one, 'Index.html'), full);
+fs.writeFileSync(path.join(one, 'Code.gs'), `/** Pakistan Runner: Deploy > New deployment > Web app, then open the URL to play. */
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('Pakistan Runner')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+`);
+console.log('two-file/Index.html', (fs.statSync(path.join(one, 'Index.html')).size / 1024).toFixed(0) + ' KB');
